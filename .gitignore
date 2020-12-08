@@ -1,2 +1,5 @@
 env.txt
 startup_message.txt
+*.ipynb
+.ipynb_checkpoints
+twitch_bot.db
