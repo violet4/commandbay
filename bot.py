@@ -4,6 +4,7 @@
 
 # https://www.twitch.tv/violet_nocturnus
 
+import re
 import os # for importing env vars for the bot to use
 from twitchio.ext import commands
 from envbash import load_envbash
@@ -15,15 +16,22 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 owner_username = os.environ['OWNER_ID']
 bot_nick = os.environ['BOT_NICK']
 channel = os.environ['CHANNEL']
+re_greet_minutes = int(os.environ['re_greet_minutes'])
 
 conn = sqlite3.connect('twitch_bot.db')
 try:
     conn.execute('''
     create table viewers (
-        name text unique
+        name text
         , last_seen text
         , first_seen text
+        , channel text
     )
+    ''')
+    conn.execute('''
+    CREATE unique index
+        viewers_unique_name_channel_index
+        on viewers(name,channel);
     ''')
     conn.commit()
 except sqlite3.OperationalError:
@@ -48,30 +56,34 @@ async def event_ready():
     # await ws.send_privmsg(channel, f"👋")
 
 
-def saw_user_today(username):
-    _saw_user_today = False
-    today = datetime.date.today()
-
-    cursor = conn.execute(
-        """SELECT *
-            from viewers
-            where name = ?
-                and last_seen > ?""",
-        (username, today)
+def extract_datetime(dt_string):
+    # dt_string = str(datetime.datetime.now())
+    m = re.match(
+        r'(\d{4})-(\d{2})-(\d{2}) (\d{1,2}):(\d{1,2}):(\d{1,2})',
+        dt_string
     )
-    user = cursor.fetchone()
-    if user:
-        _saw_user_today = True
+    parts = [int(p) for p in m.groups()]
+    return datetime.datetime(*parts)
 
-    return _saw_user_today
+def get_time_last_saw_user(name):
+    cursor = conn.execute(
+        'SELECT last_seen from viewers where name=? and channel=?',
+        (name,channel)
+    )
 
-def update_saw_user(username):
+    row = cursor.fetchone()
+    if not row:
+        return None
+
+    return extract_datetime(row[0])
+
+def update_last_saw_user(username):
     now = str(datetime.datetime.now())
     conn.execute(
-        f'''INSERT INTO viewers values (?,?,?)
-            ON CONFLICT(name) DO UPDATE SET last_seen=?;
+        f'''INSERT INTO viewers values (?,?,?,?)
+            ON CONFLICT(name,channel) DO UPDATE SET last_seen=?;
         ''',
-        (username, now, now, now)
+        (username, now, now, channel, now)
     )
     conn.commit()
 
@@ -86,10 +98,22 @@ async def event_message(ctx):
     #     print(ctx.content)
     #     await ctx.channel.send(ctx.content)
 
-    if not saw_user_today(ctx.author.name):
-        await ctx.channel.send(f'Welcome, {ctx.author.name}!')
+    # TODO see if twitch has an event for when users enter the stream, not just when they say something
+    last_seen_dt = get_time_last_saw_user(ctx.author.name)
 
-    update_saw_user(ctx.author.name)
+    minutes_since_last_saw_user = None
+    if last_seen_dt:
+        minutes_since_last_saw_user = datetime.datetime.now() - last_seen_dt
+        minutes_since_last_saw_user = (
+            minutes_since_last_saw_user.total_seconds() / 60
+        )
+
+    # TODO: A table of parameterized greetings, so it's a bit random.
+    if not last_seen_dt:
+        await ctx.channel.send(f'Welcome, {ctx.author.name}!')
+    elif last_seen_dt and minutes_since_last_saw_user >= re_greet_minutes:
+        await ctx.channel.send(f'Welcome back, {ctx.author.name}!')
+    update_last_saw_user(ctx.author.name)
 
 
 def print_startup_message_file():

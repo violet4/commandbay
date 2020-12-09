@@ -4,3 +4,7 @@ CLIENT_ID=
 BOT_NICK=
 BOT_PREFIX=
 CHANNEL=
+
+# how long after we've seen a user to re-greet them
+# default 3 hours
+regreet_minutes=180
