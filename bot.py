@@ -63,7 +63,9 @@ bot = commands.Bot(
 )
 
 # import plugin commands
-for module in os.listdir('plugins'):
+plugins_dir = os.path.join(this_dir, 'plugins')
+sys.path.append(this_dir)
+for module in os.listdir(plugins_dir):
     if not module.endswith('.py'):
         continue
     module = module.split('.', 1)[0]
