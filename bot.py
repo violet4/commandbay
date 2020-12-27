@@ -5,18 +5,31 @@
 # https://www.twitch.tv/violet_nocturnus
 
 import re
-import os # for importing env vars for the bot to use
+import os
 from twitchio.ext import commands
-from envbash import load_envbash
 import datetime
 import sqlite3
-load_envbash('env.txt')
+import importlib
+import sys
+
+
+env = dict()
+with open('env.txt', 'r') as fr:
+    for line in fr:
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith('#'):
+            continue
+        k, v = line.split('=', 1)
+        env[k] = v
+
 this_dir = os.path.dirname(os.path.abspath(__file__))
 
-owner_username = os.environ['OWNER_ID']
-bot_nick = os.environ['BOT_NICK']
-channel = os.environ['CHANNEL']
-re_greet_minutes = int(os.environ['re_greet_minutes'])
+owner_username = env['OWNER_ID']
+bot_nick = env['BOT_NICK']
+channel = env['CHANNEL']
+re_greet_minutes = int(env['re_greet_minutes'])
 
 conn = sqlite3.connect('twitch_bot.db')
 try:
@@ -38,14 +51,25 @@ except sqlite3.OperationalError:
     conn.rollback()
     pass
 
+command_prefix = env['BOT_PREFIX']
 bot = commands.Bot(
     # set up the bot
-    irc_token=os.environ['TMI_TOKEN'],
-    client_id=os.environ['CLIENT_ID'],
-    nick=os.environ['BOT_NICK'],
-    prefix=os.environ['BOT_PREFIX'],
+    irc_token=env['TMI_TOKEN'],
+    client_id=env['CLIENT_ID'],
+    nick=env['BOT_NICK'],
+    prefix=command_prefix,
     initial_channels=[channel]
 )
+
+# import plugin commands
+for module in os.listdir('plugins'):
+    if not module.endswith('.py'):
+        continue
+    module = module.split('.', 1)[0]
+    module = f'plugins.{module}'
+    module = importlib.import_module(module)
+    for name, fn in module.commands:
+        fn = bot.command(name=name)(fn)
 
 @bot.event
 async def event_ready():
@@ -110,10 +134,16 @@ async def event_message(ctx):
 
     # TODO: A table of parameterized greetings, so it's a bit random.
     if not last_seen_dt:
-        await ctx.channel.send(f'Welcome, {ctx.author.name}!')
+        message = f'Welcome, {ctx.author.name}! ({datetime.datetime.now()})'
+        print(message)
+        await ctx.channel.send(message)
     elif last_seen_dt and minutes_since_last_saw_user >= re_greet_minutes:
-        await ctx.channel.send(f'Welcome back, {ctx.author.name}!')
+        message = f'Welcome back, {ctx.author.name}! ({datetime.datetime.now()})'
+        print(message)
+        await ctx.channel.send(message)
     update_last_saw_user(ctx.author.name)
+
+    await bot.handle_commands(ctx)
 
 
 def print_startup_message_file():
