@@ -14,7 +14,9 @@ import sys
 
 
 env = dict()
-with open('env.txt', 'r') as fr:
+this_dir = os.path.dirname(os.path.abspath(__file__))
+env_file = os.path.join(this_dir, 'env.txt')
+with open(env_file, 'r') as fr:
     for line in fr:
         line = line.strip()
         if not line:
@@ -24,7 +26,6 @@ with open('env.txt', 'r') as fr:
         k, v = line.split('=', 1)
         env[k] = v
 
-this_dir = os.path.dirname(os.path.abspath(__file__))
 
 owner_username = env['OWNER_ID']
 bot_nick = env['BOT_NICK']
