@@ -2,7 +2,7 @@
 
 # https://dev.to/ninjabunny9000/let-s-make-a-twitch-bot-with-python-2nd8
 
-# https://www.twitch.tv/violet_nocturnus
+# https://www.twitch.tv/violet_revenant
 
 import re
 import os
@@ -114,19 +114,25 @@ def update_last_saw_user(username):
     )
     conn.commit()
 
-@bot.event
-async def event_message(ctx):
-    'Runs every time a message is sent in chat.'
+def now():
+    return datetime.datetime.now()
 
-    # make sure the bot ignores itself and the streamer
-    if ctx.author.name.lower() == bot_nick.lower():
-        return
-    # elif ctx.author.name == owner_username:
+# @bot.event
+# async def event_message(ctx):
+    # elif user.name == owner_username:
     #     print(ctx.content)
     #     await ctx.channel.send(ctx.content)
 
+@bot.event
+async def event_join(user):
+    'Runs every time a message is sent in chat.'
+
+    # make sure the bot ignores itself and the streamer
+    if user.name.lower() in (bot_nick.lower(), channel.lower()):
+        return
+
     # TODO see if twitch has an event for when users enter the stream, not just when they say something
-    last_seen_dt = get_time_last_saw_user(ctx.author.name)
+    last_seen_dt = get_time_last_saw_user(user.name)
 
     minutes_since_last_saw_user = None
     if last_seen_dt:
@@ -137,17 +143,20 @@ async def event_message(ctx):
 
     # TODO: A table of parameterized greetings, so it's a bit random.
     if not last_seen_dt:
-        message = f'Welcome, {ctx.author.name}! ({datetime.datetime.now()})'
-        print(message)
-        await ctx.channel.send(message)
+        message = f'Welcome, {user.name}!'
+        print(message, now())
+        await user.channel.send(message)
     elif last_seen_dt and minutes_since_last_saw_user >= re_greet_minutes:
-        message = f'Welcome back, {ctx.author.name}! ({datetime.datetime.now()})'
-        print(message)
-        await ctx.channel.send(message)
-    update_last_saw_user(ctx.author.name)
+        message = f'Welcome back, {user.name}!'
+        print(message, now())
+        await user.channel.send(message)
+    update_last_saw_user(user.name)
 
-    await bot.handle_commands(ctx)
+    # await bot.handle_commands(ctx)
 
+@bot.event
+async def event_part(user):
+    print(f'user {user.name} has left channel {user.channel} at {now()}')
 
 def print_startup_message_file():
     startup_file_path = os.path.join(this_dir, 'startup_message.txt')

@@ -4,3 +4,4 @@ startup_message.txt
 .ipynb_checkpoints
 twitch_bot.db
 __pycache__
+plugins/*.py
