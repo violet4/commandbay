@@ -1,13 +1,14 @@
 # your username, e.g. my_username
 OWNER_ID=
-# e.g. oauth:u8...
+# e.g. oauth:u8... generated at https://twitchapps.com/tmi/
 TMI_TOKEN=
 # just a name to describe the bot service, e.g. my_bot
+# copied from the python code documentation: "Your application ID, used for HTTP endpoints."
 CLIENT_ID=
-# e.g. bot_username
+# e.g. bot_username (can be your username if you're running your bot under your own user)
 BOT_NICK=
 # prefix for commands, e.g. ! or /
-BOT_PREFIX=
+BOT_PREFIX=!
 # the username of the chat for the bot to hang out in, e.g. my_username
 CHANNEL=
 
