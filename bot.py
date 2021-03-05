@@ -27,7 +27,9 @@ from twitchio.ext import commands
 # pip install pyttsx3
 import pyttsx3
 tts = pyttsx3.init()
+tts.setProperty('volume', 0.1)
 
+# XXX: singleton?
 env = dict()
 this_dir = os.path.dirname(os.path.abspath(__file__))
 env_file = os.path.join(this_dir, 'env.txt')
@@ -41,10 +43,10 @@ with open(env_file, 'r') as fr:
         k, v = line.split('=', 1)
         env[k] = v
 
-
 owner_username = env['OWNER_ID']
 bot_nick = env['BOT_NICK']
-channel = env['CHANNEL']
+channels = env.get('CHANNELS', '').split(',')
+talk_channels = set(env.get('TALK_CHANNELS', '').lower().split(','))
 re_greet_minutes = int(env['re_greet_minutes'])
 ignore_users = {
     # owner_username.lower(),
@@ -125,8 +127,12 @@ bot = commands.Bot(
     client_id=env['CLIENT_ID'],
     nick=env['BOT_NICK'],
     prefix=command_prefix,
-    initial_channels=[channel]
+    initial_channels=channels,
 )
+
+command_env = {
+    'tts': tts,
+}
 
 # import plugin commands
 plugins_dir = os.path.join(this_dir, 'plugins')
@@ -138,8 +144,27 @@ for module in os.listdir(plugins_dir):
     print(f'loading plugin {module}')
     module = f'plugins.{module}'
     module = importlib.import_module(module)
-    for name, fn in module.commands:
-        fn = bot.command(name=name)(fn)
+    if not hasattr(module, 'commands'):
+        print(f"couldn't find 'commands' attribute in module {module}")
+        continue
+    for ele in module.commands:
+        aliases = list()
+        name = fn = None
+        if isinstance(ele, tuple):
+            name, fn = ele
+        else:
+            name = ele.get('name')
+            fn = ele.get('fn')
+            aliases = ele.get('aliases', [])
+        # give plugins access to the tts object
+        fn.env = command_env
+        names = [name]
+        names.extend(aliases)
+        orig_fn = fn
+        for name in names:
+            fn = bot.command(
+                name=name,
+            )(orig_fn)
 
 @bot.event
 async def event_ready():
@@ -294,14 +319,14 @@ def insert_history(user, event):
     )
     conn.commit()
 
-def update_user_last_exited(user):
+def update_user_last_exited(user, channel):
     now = str(datetime.datetime.now())
     conn.execute(
         f'''INSERT INTO viewers values (?,?,?,?,?,?)
             ON CONFLICT(userid,channel) DO UPDATE SET last_exited=?;
         ''',
         strip((
-            user.id, channel, user.name, now, now, now,
+            user.id, channel.name, user.name, now, now, now,
             now
         ))
     )
@@ -317,6 +342,7 @@ async def event_message(ctx):
     • TTS
     • handle nonexistent commands
     """
+    print(f'{now()} ({ctx.channel.name}) {ctx.author.name}: {ctx.content}')
     # useful someday: ctx.author.is_mod
     update_last_saw_user(ctx.author)
     if ctx.author.name.lower() in ignore_users:
@@ -334,6 +360,7 @@ async def event_message(ctx):
                 f'command {command}: {ctx.content}'
             )
             return
+
         await bot.handle_commands(ctx)
         return
 
@@ -345,8 +372,11 @@ async def event_message(ctx):
     message = ctx.content
     # put spacing between each sentence instead of sounding like a
     # run-on sentence
+    message = re.sub(r'https?://[^ ]+', 'URL', message)
     parts = re.split(r'[?.;,!]+', message)
     for part in parts:
+        if not part.strip():
+            continue
         tts.say(part)
     tts.runAndWait()
 
@@ -361,9 +391,15 @@ re_greetings = [
     'Long time no see, {}!',
 ]
 
+async def send(channel, message):
+    if channel.name.lower() not in talk_channels:
+        return
+    await channel.send(message)
+
 @bot.event
 async def event_join(user):
     'Runs every time a message is sent in chat.'
+    print(f'event_join {user.channel.name} {user.name}')
     insert_history(user, 'join')
 
     # make sure the bot ignores itself and the streamer
@@ -391,15 +427,17 @@ async def event_join(user):
     if greetlist:
         greeting = random.choice(greetlist)
         message = greeting.format(user.name)
-        print(now(), message)
-        await user.channel.send(message)
+        # print(now(), message)
+        print(f'{now()} ({user.channel.name}): {user.name} joined')
+        await send(user.channel, message)
+        # await user.channel.send(message)
     update_last_saw_user(user)
 
 
 @bot.event
 async def event_part(user):
-    print(f'{now()}: user {user.name} has left channel {user.channel}')
-    update_user_last_exited(user)
+    print(f'{now()} ({user.channel}): user {user.name} has parted')
+    update_user_last_exited(user, user.channel)
 
 def print_startup_message_file():
     startup_file_path = os.path.join(this_dir, 'startup_message.txt')
