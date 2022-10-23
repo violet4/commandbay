@@ -33,15 +33,22 @@ tts.setProperty('volume', 0.1)
 env = dict()
 this_dir = os.path.dirname(os.path.abspath(__file__))
 env_file = os.path.join(this_dir, 'env.txt')
-with open(env_file, 'r') as fr:
-    for line in fr:
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith('#'):
-            continue
-        k, v = line.split('=', 1)
-        env[k] = v
+
+
+def load_env(env):
+    with open(env_file, 'r') as fr:
+        for line in fr:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('#'):
+                continue
+            k, v = line.split('=', 1)
+            env[k] = v
+    return env
+
+
+env = load_env(env)
 
 owner_username = env['OWNER_ID']
 bot_nick = env['BOT_NICK']
@@ -55,12 +62,32 @@ ignore_users = {
 }
 
 conn = sqlite3.connect('twitch_bot.db')
+
+
 def execute(sql):
     try:
         conn.execute(sql)
-        conn.commit()
     except sqlite3.OperationalError:
         conn.rollback()
+
+
+execute(
+    '''CREATE TABLE viewers (
+userid bigint
+, channel text
+, name text
+, first_seen text
+, last_seen text
+, last_exited text
+)
+''')
+execute(
+    '''CREATE unique index
+viewers_unique_userid_channel_index
+on viewers(userid,channel);
+''')
+
+# TODO: timestamp to bigint and save epoch time
 
 execute(
 '''CREATE TABLE viewers (
@@ -147,6 +174,7 @@ for module in os.listdir(plugins_dir):
     if not hasattr(module, 'commands'):
         print(f"couldn't find 'commands' attribute in module {module}")
         continue
+
     for ele in module.commands:
         aliases = list()
         name = fn = None
@@ -162,9 +190,9 @@ for module in os.listdir(plugins_dir):
         names.extend(aliases)
         orig_fn = fn
         for name in names:
-            fn = bot.command(
-                name=name,
-            )(orig_fn)
+            # register the command with the twitch bot
+            bot.command(name=name)(orig_fn)
+
 
 @bot.event
 async def event_ready():
@@ -184,7 +212,8 @@ def extract_datetime(dt_string):
     parts = [int(p) for p in m.groups()]
     return datetime.datetime(*parts)
 
-def get_time_last_saw_user(user):
+
+def get_time_user_seen_last(user):
     cursor = conn.execute(
         'SELECT last_seen from viewers where userid=? and channel=?',
         (user.id,user.channel.name)
@@ -197,6 +226,7 @@ def get_time_last_saw_user(user):
 
     return extract_datetime(row[0])
 
+
 def strip(o):
     if hasattr(o, 'strip'):
         return o.strip()
@@ -206,11 +236,12 @@ def strip(o):
         return type(o)(strip(a) for a in o)
     return o
 
-def update_last_saw_user(user):
+
+def update_user_seen_last(user):
     now_dt = now()
     conn.execute(
         f'''INSERT INTO viewers values (?,?,?,?,?,?)
-            ON CONFLICT(userid,channel) DO UPDATE SET last_seen=?;
+        ON CONFLICT(userid,channel) DO UPDATE SET last_seen=?;
         ''',
         strip((
             user.id,
@@ -219,11 +250,11 @@ def update_last_saw_user(user):
             now_dt,
             now_dt,
             None,
-
             now_dt
         ))
     )
     conn.commit()
+
 
 def ensure_event(event):
     cursor = conn.execute(
@@ -254,6 +285,7 @@ def ensure_event(event):
     eventid = row[0]
     return eventid
 
+
 def ensure_channel(channel):
     cursor = conn.execute(
         '''SELECT channelid FROM channels WHERE channel=? LIMIT 1''',
@@ -278,6 +310,7 @@ def ensure_channel(channel):
     cursor.close()
     channelid = row[0]
     return channelid
+
 
 def ensure_user(username):
     cursor = conn.execute(
@@ -304,6 +337,7 @@ def ensure_user(username):
     userid = row[0]
     return userid
 
+
 def insert_history(user, event):
     eventid = ensure_event(event)
     channelid = ensure_channel(user.channel.name)
@@ -319,32 +353,41 @@ def insert_history(user, event):
     )
     conn.commit()
 
-def update_user_last_exited(user, channel):
-    now = str(datetime.datetime.now())
+
+def update_user_exited_last(user, channel):
+    now_str = str(datetime.datetime.now())
     conn.execute(
         f'''INSERT INTO viewers values (?,?,?,?,?,?)
-            ON CONFLICT(userid,channel) DO UPDATE SET last_exited=?;
+        ON CONFLICT(userid,channel) DO UPDATE SET last_exited=?;
         ''',
         strip((
-            user.id, channel.name, user.name, now, now, now,
-            now
+            user.id,
+            channel.name,
+            user.name,
+            now_str,
+            now_str,
+            now_str,
+            now_str
         ))
     )
     conn.commit()
     insert_history(user, 'part_channel')
 
+
 def now():
     return datetime.datetime.now()
+
 
 @bot.event
 async def event_message(ctx):
     """
     • TTS
     • handle nonexistent commands
+    • Runs every time a message is sent in chat.
     """
     print(f'{now()} ({ctx.channel.name}) {ctx.author.name}: {ctx.content}')
     # useful someday: ctx.author.is_mod
-    update_last_saw_user(ctx.author)
+    update_user_seen_last(ctx.author)
     if ctx.author.name.lower() in ignore_users:
         return
 
@@ -384,6 +427,7 @@ greetings = [
     'Hello, {}!',
     'Welcome, {}!',
     'Hi, {}!',
+    'Oh hai, {}!',
 ]
 re_greetings = [
     'Hello again, {}!',
@@ -391,14 +435,16 @@ re_greetings = [
     'Long time no see, {}!',
 ]
 
+
 async def send(channel, message):
     if channel.name.lower() not in talk_channels:
         return
     await channel.send(message)
 
+
 @bot.event
 async def event_join(user):
-    'Runs every time a message is sent in chat.'
+
     print(f'event_join {user.channel.name} {user.name}')
     insert_history(user, 'join')
 
@@ -407,13 +453,13 @@ async def event_join(user):
         return
 
     # TODO see if twitch has an event for when users enter the stream, not just when they say something
-    last_seen_dt = get_time_last_saw_user(user)
+    last_seen_dt = get_time_user_seen_last(user)
 
-    minutes_since_last_saw_user = None
+    minutes_since_user_seen_last = None
     if last_seen_dt:
-        minutes_since_last_saw_user = datetime.datetime.now() - last_seen_dt
-        minutes_since_last_saw_user = (
-            minutes_since_last_saw_user.total_seconds() / 60
+        minutes_since_user_seen_last = now() - last_seen_dt
+        minutes_since_user_seen_last = (
+            minutes_since_user_seen_last.total_seconds() / 60
         )
 
     greetlist = None
@@ -421,7 +467,7 @@ async def event_join(user):
     if not last_seen_dt:
         greetlist = greetings
     # seen, but it's been a while
-    elif last_seen_dt and minutes_since_last_saw_user >= re_greet_minutes:
+    elif last_seen_dt and minutes_since_user_seen_last >= re_greet_minutes:
         greetlist = re_greetings
 
     if greetlist:
@@ -431,13 +477,15 @@ async def event_join(user):
         print(f'{now()} ({user.channel.name}): {user.name} joined')
         await send(user.channel, message)
         # await user.channel.send(message)
-    update_last_saw_user(user)
+
+    update_user_seen_last(user)
 
 
 @bot.event
 async def event_part(user):
     print(f'{now()} ({user.channel}): user {user.name} has parted')
-    update_user_last_exited(user, user.channel)
+    update_user_exited_last(user, user.channel)
+
 
 def print_startup_message_file():
     startup_file_path = os.path.join(this_dir, 'startup_message.txt')
@@ -445,6 +493,7 @@ def print_startup_message_file():
         with open(startup_file_path, 'r') as fr:
             for line in fr:
                 print(line)
+
 
 if __name__ == '__main__':
     print_startup_message_file()

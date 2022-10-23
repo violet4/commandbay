@@ -5,3 +5,5 @@ startup_message.txt
 twitch_bot.db
 __pycache__
 plugins/*.py
+.fleet
+.idea
