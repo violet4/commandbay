@@ -22,17 +22,60 @@ import sqlite3
 import importlib
 import sys
 from collections.abc import Iterable
+import logging
+from typing import Any, Union, Callable, Optional, Type, TypeVar
 
 from twitchio.ext import commands
-# pip install pyttsx3
-import pyttsx3
-tts = pyttsx3.init()
+from twitchio.message import Message
+from twitchio.channel import Channel
+from twitchio.chatter import Chatter, PartialChatter
+from twitchio.ext.commands.core import Context
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(level=logging.INFO)
+
+class TTS:
+    def __init__(self):
+        try:
+            import pyttsx3
+            from pyttsx3.engine import Engine
+            self.tts: Engine = pyttsx3.init()
+            self.tts_disabled = False
+            self.tts_enabled = True
+        except ImportError:
+            pyttsx3 = None
+            self.tts_disabled = True
+            self.tts_enabled = False
+            logger.info("failed to import pyttsx3; text-to-speech is disabled")
+
+    def setProperty(self, propName: str, value: Any):
+        if self.tts_disabled:
+            return
+        self.tts.setProperty(propName, value)
+
+    def say(self, string:str):
+        if self.tts_disabled:
+            return
+        self.tts.say(string)
+
+    def runAndWait(self):
+        if self.tts_disabled:
+            return
+        self.tts.runAndWait()
+
+
+tts: TTS = TTS()
 tts.setProperty('volume', 0.1)
+
 
 # XXX: singleton?
 env = dict()
 this_dir = os.path.dirname(os.path.abspath(__file__))
 env_file = os.path.join(this_dir, 'env.txt')
+
+url_re = re.compile(r'https?://[^ ]+')
+NO_MESSAGE_CONTENT = 'no_message_content'
 
 
 def load_env(env):
@@ -49,10 +92,12 @@ def load_env(env):
 
 
 env = load_env(env)
+logger.debug('env: %s', env)
 
 owner_username = env['OWNER_ID']
 bot_nick = env['BOT_NICK']
 channels = env.get('CHANNELS', '').split(',')
+
 talk_channels = set(env.get('TALK_CHANNELS', '').lower().split(','))
 re_greet_minutes = int(env['re_greet_minutes'])
 ignore_users = {
@@ -147,8 +192,10 @@ execute(
     on events(event);
 ''')
 
+logger.info("channels: %s", channels)
 command_prefix = env['BOT_PREFIX']
 bot = commands.Bot(
+    token=env['TMI_TOKEN'],
     # set up the bot
     irc_token=env['TMI_TOKEN'],
     client_id=env['CLIENT_ID'],
@@ -156,6 +203,12 @@ bot = commands.Bot(
     prefix=command_prefix,
     initial_channels=channels,
 )
+
+# super().__init__(
+#     token=getenv('TWITCH_TOKEN'),
+#     prefix='!',
+#     initial_channels=[getenv('TWITCH_CHANNEL')],
+# )
 
 command_env = {
     'tts': tts,
@@ -168,11 +221,11 @@ for module in os.listdir(plugins_dir):
     if not module.endswith('.py'):
         continue
     module = module.split('.', 1)[0]
-    print(f'loading plugin {module}')
+    logger.info(f'loading plugin {module}')
     module = f'plugins.{module}'
     module = importlib.import_module(module)
     if not hasattr(module, 'commands'):
-        print(f"couldn't find 'commands' attribute in module {module}")
+        logger.error(f"couldn't find 'commands' attribute in module {module}")
         continue
 
     for ele in module.commands:
@@ -194,29 +247,34 @@ for module in os.listdir(plugins_dir):
             bot.command(name=name)(orig_fn)
 
 
-@bot.event
+@bot.event(name='event_ready')
 async def event_ready():
     'Called once when the bot goes online.'
-    print(f"{bot_nick} is online!")
+    logger.info(f"{bot_nick} is online!")
     # ws = bot._ws  # this is only needed to send messages within event_ready
     # await ws.send_privmsg(channel, f"/me has landed!")
     # await ws.send_privmsg(channel, f"👋")
 
-
-def extract_datetime(dt_string):
+def extract_datetime(dt_string, default=datetime.datetime.now):
     # dt_string = str(datetime.datetime.now())
     m = re.match(
         r'(\d{4})-(\d{2})-(\d{2}) (\d{1,2}):(\d{1,2}):(\d{1,2})',
         dt_string
     )
+    if not m:
+        if isinstance(default, Callable):
+            return default()
+        return default
     parts = [int(p) for p in m.groups()]
-    return datetime.datetime(*parts)
+    if len(parts) == 6:
+        y, mon, d, h, m, s = parts
+        return datetime.datetime(y, mon, d, h, m, s)
 
 
-def get_time_user_seen_last(user):
+def get_time_user_seen_last(user, channel):
     cursor = conn.execute(
-        'SELECT last_seen from viewers where userid=? and channel=?',
-        (user.id,user.channel.name)
+        'SELECT last_seen from viewers where name=? and channel=?',
+        (user.name,channel.name)
     )
 
     row = cursor.fetchone()
@@ -228,40 +286,45 @@ def get_time_user_seen_last(user):
 
 
 def strip(o):
-    if hasattr(o, 'strip'):
+    if isinstance(o, str):
         return o.strip()
     elif o is None:
         return None
-    elif isinstance(o, Iterable):
+    elif isinstance(o, (list, set)):
         return type(o)(strip(a) for a in o)
     return o
 
 
-def update_user_seen_last(user):
+def update_user_seen_last(user:Chatter):
+    if not isinstance(user, Chatter):
+        return
     now_dt = now()
-    conn.execute(
-        f'''INSERT INTO viewers values (?,?,?,?,?,?)
-        ON CONFLICT(userid,channel) DO UPDATE SET last_seen=?;
-        ''',
-        strip((
-            user.id,
-            user.channel.name,
-            user.name.strip(),
-            now_dt,
-            now_dt,
-            None,
-            now_dt
-        ))
-    )
+    channel_name = getattr(getattr(user, 'channel', None), 'name', None)
+    columns = [
+        strip(user.id),       # userid
+        strip(channel_name),  # channel
+        strip(user.name),     # name
+        strip(now_dt),        # last_seen
+        strip(now_dt),        # first_seen
+        strip(now_dt),        # UPSERT last_seen
+    ]
+    INSERT_QUERY = f'''INSERT INTO
+            viewers (userid,channel,name,last_seen,first_seen,last_exited)
+            -- when counting number of args, don't forget last_seen=.. below
+            values (?,?,?,?,?,null)
+        ON CONFLICT(name,channel) DO UPDATE SET last_seen=?;
+    '''
+    try:
+        conn.execute(INSERT_QUERY, columns)
+    except sqlite3.IntegrityError as e:
+        logger.debug("integrity error:\n%s\n%s", INSERT_QUERY, columns)
     conn.commit()
 
 
 def ensure_event(event):
     cursor = conn.execute(
         '''SELECT eventid FROM events WHERE event=? LIMIT 1''',
-        strip((
-            event,
-        )),
+        (strip(event),),
     )
     row = cursor.fetchone()
     cursor.close()
@@ -274,9 +337,7 @@ def ensure_event(event):
         VALUES (?)
         ON CONFLICT (event)
         DO NOTHING;''',
-        strip((
-            event,
-        )),
+        (strip(event),),
     )
     conn.commit()
     cursor = conn.execute('''SELECT last_insert_rowid();''')
@@ -289,7 +350,7 @@ def ensure_event(event):
 def ensure_channel(channel):
     cursor = conn.execute(
         '''SELECT channelid FROM channels WHERE channel=? LIMIT 1''',
-        strip((channel,)),
+        (strip(channel),),
     )
     row = cursor.fetchone()
     cursor.close()
@@ -302,7 +363,7 @@ def ensure_channel(channel):
         VALUES (?)
         ON CONFLICT (channel)
         DO NOTHING;''',
-        strip((channel,)),
+        (strip(channel),),
     )
     conn.commit()
     cursor = conn.execute('''SELECT last_insert_rowid();''')
@@ -315,7 +376,7 @@ def ensure_channel(channel):
 def ensure_user(username):
     cursor = conn.execute(
         '''SELECT userid FROM users WHERE user=? LIMIT 1''',
-        strip((username,)),
+        (strip(username),),
     )
     row = cursor.fetchone()
     cursor.close()
@@ -328,7 +389,7 @@ def ensure_user(username):
         VALUES (?)
         ON CONFLICT (user)
         DO NOTHING;''',
-        strip((username,)),
+        (strip(username),),
     )
     conn.commit()
     cursor = conn.execute('''SELECT last_insert_rowid();''')
@@ -338,18 +399,20 @@ def ensure_user(username):
     return userid
 
 
-def insert_history(user, event):
+def insert_history(user:Chatter, channel:Channel, event:str):
+    if not isinstance(user, Chatter):
+        return
     eventid = ensure_event(event)
-    channelid = ensure_channel(user.channel.name)
+    channelid = ensure_channel(channel.name)
     userid = ensure_user(user.name.strip())
     conn.execute(
         '''INSERT INTO history VALUES (?,?,?,?)''',
-        strip((
-            userid,
-            now(),
-            channelid,
-            eventid,
-        ))
+        (
+            strip(userid),
+            strip(now()),
+            strip(channelid),
+            strip(eventid),
+        ),
     )
     conn.commit()
 
@@ -360,68 +423,91 @@ def update_user_exited_last(user, channel):
         f'''INSERT INTO viewers values (?,?,?,?,?,?)
         ON CONFLICT(userid,channel) DO UPDATE SET last_exited=?;
         ''',
-        strip((
-            user.id,
-            channel.name,
-            user.name,
-            now_str,
-            now_str,
-            now_str,
-            now_str
-        ))
+        (
+            strip(user.id),
+            strip(channel.name),
+            strip(user.name),
+            strip(now_str),
+            strip(now_str),
+            strip(now_str),
+            strip(now_str),
+        ),
     )
     conn.commit()
-    insert_history(user, 'part_channel')
+    insert_history(user, channel, 'part_channel')
 
 
 def now():
     return datetime.datetime.now()
 
 
-@bot.event
-async def event_message(ctx):
+@bot.command(name='song')
+async def song(ctx:Context):
+    logger.info("song command:\nctx: %s", ctx)
+
+
+@bot.event(name='event_message')
+async def event_message(msg:Message):
     """
     • TTS
     • handle nonexistent commands
     • Runs every time a message is sent in chat.
     """
-    print(f'{now()} ({ctx.channel.name}) {ctx.author.name}: {ctx.content}')
-    # useful someday: ctx.author.is_mod
-    update_user_seen_last(ctx.author)
-    if ctx.author.name.lower() in ignore_users:
+    message_content = getattr(msg, 'content', NO_MESSAGE_CONTENT)
+    author: Union["Chatter", "PartialChatter"] = msg.author
+    if isinstance(author, Chatter):
+        update_user_seen_last(author)
+        author_name = author.name
+    else:
+        author_name = 'missing_author_name'
+
+    channel: Optional[Channel] = msg.channel if isinstance(msg.channel, Channel) else None
+    channel_name: str = getattr(channel, 'name', 'missing_channel_name')
+    logger.debug(f'{now()} ({channel_name}) {author_name}: {msg.content}')
+
+    if getattr(getattr(msg, 'author'), 'name', str(random.randbytes(20))) in ignore_users:
         return
 
     # handle commands, including bad/nonexistent commands
-    if ctx.content.lstrip().startswith(command_prefix):
-        insert_history(ctx.author, 'command')
-        command = ctx.content.split()[0]
-        command = command[1:]
-        if command not in bot.commands:
-            print(
-                now(),
-                f'user {ctx.author.name} tried to use nonexistent '
-                f'command {command}: {ctx.content}'
+    if message_content.lstrip().startswith(command_prefix):
+        #TODO:add the actual command
+        if isinstance(author, Chatter) and isinstance(channel, Channel):
+            insert_history(author, channel, 'command')
+        #TODO:may need to handle parsing a bit more intelligently
+        command = message_content.split()[0]
+        command = command[1:]  # chop off the command prefix
+        if command not in bot.commands and command!='song':
+            logger.warning(
+                f'%s:user %s tried to use nonexistent '
+                f'command %s: %s',
+                now(), author_name, command, message_content
             )
             return
 
-        await bot.handle_commands(ctx)
+        await bot.handle_commands(msg)
         return
 
-    insert_history(ctx.author, 'message')
+    if isinstance(author, Chatter) and isinstance(channel, Channel):
+        insert_history(author, channel, 'message')
+    else:
+        logger.debug("author %s isn't an author and channel %s isn't a channel", author, channel)
 
     # TTS
-    tts.say(ctx.author.name)
-    tts.say('says')
-    message = ctx.content
-    # put spacing between each sentence instead of sounding like a
-    # run-on sentence
-    message = re.sub(r'https?://[^ ]+', 'URL', message)
-    parts = re.split(r'[?.;,!]+', message)
-    for part in parts:
-        if not part.strip():
-            continue
-        tts.say(part)
-    tts.runAndWait()
+    # don't TTS yourself
+    if tts.tts_enabled and author_name!=owner_username:
+        tts.say(author_name)
+        tts.say('says')
+        tts_message = message_content
+        # put spacing between each sentence instead of sounding like a
+        # run-on sentence
+
+        tts_message = url_re.sub('URL', tts_message)
+        parts = re.split(r'[?.;,!]+', tts_message)
+        for part in parts:
+            if not part.strip():
+                continue
+            tts.say(part)
+        tts.runAndWait()
 
 greetings = [
     'Hello, {}!',
@@ -439,21 +525,23 @@ re_greetings = [
 async def send(channel, message):
     if channel.name.lower() not in talk_channels:
         return
-    await channel.send(message)
+    print("WOULD HAVE SAID IN CHAT:", message)
+    # await channel.send(message)
 
 
-@bot.event
-async def event_join(user):
+@bot.event(name='event_join')
+async def event_join(channel, user):
+    logger.debug("********** event_join\nuser: %s\nchannel: %s\n***********", user, channel)
 
-    print(f'event_join {user.channel.name} {user.name}')
-    insert_history(user, 'join')
+    logger.info(f'event_join {channel.name} {user.name}')
+    insert_history(user, channel, 'join')
 
     # make sure the bot ignores itself and the streamer
     if user.name.lower() in ignore_users:
         return
 
     # TODO see if twitch has an event for when users enter the stream, not just when they say something
-    last_seen_dt = get_time_user_seen_last(user)
+    last_seen_dt = get_time_user_seen_last(user, channel)
 
     minutes_since_user_seen_last = None
     if last_seen_dt:
@@ -467,24 +555,45 @@ async def event_join(user):
     if not last_seen_dt:
         greetlist = greetings
     # seen, but it's been a while
-    elif last_seen_dt and minutes_since_user_seen_last >= re_greet_minutes:
+    elif (
+        last_seen_dt
+        and (minutes_since_user_seen_last is not None)
+        and (minutes_since_user_seen_last >= re_greet_minutes)
+    ):
         greetlist = re_greetings
 
     if greetlist:
         greeting = random.choice(greetlist)
         message = greeting.format(user.name)
-        # print(now(), message)
-        print(f'{now()} ({user.channel.name}): {user.name} joined')
-        await send(user.channel, message)
-        # await user.channel.send(message)
+        # logger.debug(now(), message)
+        logger.info(f'{now()} ({channel.name}): {user.name} joined')
+        await send(channel, message)
 
     update_user_seen_last(user)
 
 
-@bot.event
-async def event_part(user):
-    print(f'{now()} ({user.channel}): user {user.name} has parted')
-    update_user_exited_last(user, user.channel)
+class NowStr:
+    def __init__(self):
+        pass
+    def __str__(self):
+        # INFO:__main__:2023-10-10 13:29:14.374787
+        return str(now().strftime('%Y-%m-%d %H:%M:%S'))
+
+nowstr = NowStr()
+
+@bot.event(name='event_part')
+async def event_part(chatter:Chatter, *args):
+    args = list(args)
+    channel: Optional[Channel] = None
+    if args:
+        channel = args[0]
+        logging.debug('event_part got channel from args[0]')
+    if channel is None:
+        channel = getattr(chatter, 'channel', None)
+        logging.debug('event_part got channel from chatter.channel')
+    logger.info('%s:ch(%s): chatter has parted: %s', nowstr, channel, chatter)
+    if channel is not None:
+        update_user_exited_last(chatter, channel)
 
 
 def print_startup_message_file():
@@ -492,9 +601,13 @@ def print_startup_message_file():
     if os.path.exists(startup_file_path):
         with open(startup_file_path, 'r') as fr:
             for line in fr:
-                print(line)
+                logger.info(line)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     print_startup_message_file()
-    bot.run()
+    try:
+        bot.run()
+    except KeyboardInterrupt:
+        sys.exit(0)
