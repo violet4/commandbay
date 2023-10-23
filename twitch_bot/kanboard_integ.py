@@ -1,10 +1,10 @@
 import os
 import tomllib
 from threading import Lock
-from time import sleep
 from typing import Set
 
 import kanboard
+
 
 class Kanboard(kanboard.Client):
     _lock = Lock()
@@ -24,7 +24,7 @@ class Kanboard(kanboard.Client):
         if 'cafile' in creds:
             kwargs['cafile'] = creds['cafile']
         super().__init__(creds['url'], creds['username'], creds['password'], **kwargs)
-        self.project_id = self.get_project_by_name(name=self.project_name)['id']
+        self.project_id = self.get_project_by_name(name=self.project_name)['id'] # type: ignore
 
     def add_task(self, task_title:str):
         if task_title in self.added_reminders:
@@ -36,5 +36,6 @@ class Kanboard(kanboard.Client):
 
 if __name__ == '__main__':
     kb = Kanboard()
-    task = kb.add_task('asdf')
+    import datetime
+    task = kb.add_task(str(datetime.datetime.now()))
     print(task)
