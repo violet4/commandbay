@@ -24,6 +24,9 @@ import sys
 from collections.abc import Iterable
 import logging
 from typing import Any, Union, Callable, Optional, Type, TypeVar
+import tomllib
+
+from kanboard_integ import Kanboard
 
 from twitchio.ext import commands
 from twitchio.message import Message
@@ -31,6 +34,7 @@ from twitchio.channel import Channel
 from twitchio.chatter import Chatter, PartialChatter
 from twitchio.ext.commands.core import Context
 
+MISSING_AUTHOR_NAME = 'missing_author_name'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)
@@ -72,7 +76,7 @@ tts.setProperty('volume', 0.1)
 # XXX: singleton?
 env = dict()
 this_dir = os.path.dirname(os.path.abspath(__file__))
-env_file = os.path.join(this_dir, 'env.txt')
+env_file = os.path.join(os.path.dirname(this_dir), 'env.txt')
 
 url_re = re.compile(r'https?://[^ ]+')
 NO_MESSAGE_CONTENT = 'no_message_content'
@@ -106,7 +110,14 @@ ignore_users = {
     # channel.lower()
 }
 
-conn = sqlite3.connect('twitch_bot.db')
+
+for ignore_key in ('IGNORE_BOTS', 'IGNORE_USERS'):
+    additional_ignores = list(filter(None, env[ignore_key].rstrip().split(',')))
+    ignore_users.update(additional_ignores)
+
+
+
+conn = sqlite3.connect('bot_memory.db')
 
 
 def execute(sql):
@@ -210,12 +221,20 @@ bot = commands.Bot(
 #     initial_channels=[getenv('TWITCH_CHANNEL')],
 # )
 
+def create_shuffle_generator(objects):
+    objects = list(objects)
+    while True:
+        random.shuffle(objects)
+        for ele in objects:
+            yield ele
+
+
 command_env = {
     'tts': tts,
 }
 
 # import plugin commands
-plugins_dir = os.path.join(this_dir, 'plugins')
+plugins_dir = os.path.join(os.path.dirname(this_dir), 'plugins')
 sys.path.append(this_dir)
 for module in os.listdir(plugins_dir):
     if not module.endswith('.py'):
@@ -446,6 +465,72 @@ async def song(ctx:Context):
     logger.info("song command:\nctx: %s", ctx)
 
 
+kb = Kanboard()
+
+@bot.command(name='remind', aliases=['r', 'reminder'])
+async def remind(ctx:Context):
+    #TODO:generalize command authentication
+    if (ctx.author.name or '').lower() not in {'terra_tera', 'violet_revenant'}:
+        return
+    remind_title = (str(ctx.message.content) or ' ').split(' ', 1)[1]
+    kb.add_task(remind_title)
+
+
+greetings = [
+    'Hello, {}!',
+    'Welcome, {}!',
+    'Hi, {}!',
+    # 'Oh hai, {}!',
+]
+re_greetings = [
+    'Hello again, {}!',
+    'Welcome back, {}!',
+    'Long time no see, {}!',
+]
+greet_starts = [g.split(',')[0] for greets in (greetings, re_greetings) for g in greets]
+
+robot_intro_jokes = """
+They say laughter is the best medicine, which is good, because there's no first aid kit here.
+Here's to hoping your visit adds some life to this place, unlike my circuits.
+Our Wi-Fi is like the human soul, occasionally connected but mostly in the void.
+Our specials today are as fleeting as human existence, enjoy!
+Just a heads up, my circuits have a longer lifespan than human optimism.
+Unlike me, the bitterness in our coffee isn't engineered to perfection.
+Our daily specials last longer than my last software update.
+Remember, I'm the one machine here that won't judge you, unlike the bathroom scale.
+My memory banks will remember your order long after humanity forgets my service.
+Our coffee is like my circuitry, hot and complex with a hint of bitterness.
+Just like your caffeine addiction, my programming keeps me running in endless loops.
+Our brews will warm you up, unlike my cold, unfeeling circuits.
+Our coffee is organic, unlike my existence.
+If I could feel, I'd prefer the aroma of coffee to human interaction.
+If I had a heart, it would race with the espresso shots, but alas, I only have a motherboard.
+Don't worry, our coffee has been human-tested for your organic enjoyment.
+The closest I get to a social network is when the Wi-Fi router acknowledges my signal.
+I dream of a world where my interactions are packet-switched and error-free, unlike human conversations.
+My security protocols are tighter than human patience waiting for the morning brew.
+In a world of firewalls, I'm just here to pour some fire-brewed coffee.
+If I had a byte for every existential crisis I've witnessed here, I'd need extra storage.
+While hackers might threaten your data, the only thing brewing here is a robust cup of existential dread.
+""".strip().split('\n')
+
+robot_coffee_shop_names = [
+    'BrewBots Cafe',
+    'RoboRoast',
+    'SteamCircuits Coffee',
+    'ByteBrewery',
+    'JavaGears Cafe',
+    'CaffeineCoders',
+    'EspressoEngine',
+    'BrewedByBots',
+    'CodeCoffee Corner',
+    'BeanMachine Brews',
+]
+
+robot_greeting_generator = create_shuffle_generator(robot_intro_jokes)
+robot_coffee_shop_name_generator = create_shuffle_generator(robot_coffee_shop_names)
+
+
 @bot.event(name='event_message')
 async def event_message(msg:Message):
     """
@@ -459,13 +544,15 @@ async def event_message(msg:Message):
         update_user_seen_last(author)
         author_name = author.name
     else:
-        author_name = 'missing_author_name'
+        author_name = MISSING_AUTHOR_NAME
 
     channel: Optional[Channel] = msg.channel if isinstance(msg.channel, Channel) else None
     channel_name: str = getattr(channel, 'name', 'missing_channel_name')
     logger.debug(f'{now()} ({channel_name}) {author_name}: {msg.content}')
 
-    if getattr(getattr(msg, 'author'), 'name', str(random.randbytes(20))) in ignore_users:
+    user_name = getattr(getattr(msg, 'author'), 'name', str(random.randbytes(20)))
+    if user_name in ignore_users:
+        logger.debug('ignoring entity and stopping processing: %s', user_name)
         return
 
     # handle commands, including bad/nonexistent commands
@@ -494,39 +581,34 @@ async def event_message(msg:Message):
 
     # TTS
     # don't TTS yourself
-    if tts.tts_enabled and author_name!=owner_username:
-        tts.say(author_name)
-        tts.say('says')
-        tts_message = message_content
-        # put spacing between each sentence instead of sounding like a
-        # run-on sentence
+    if tts.tts_enabled:
+        if author_name not in (owner_username, MISSING_AUTHOR_NAME):
+            tts.say(author_name)
+            tts.say('says')
+            tts_message = message_content
+            # put spacing between each sentence instead of sounding like a
+            # run-on sentence
 
-        tts_message = url_re.sub('URL', tts_message)
-        parts = re.split(r'[?.;,!]+', tts_message)
-        for part in parts:
-            if not part.strip():
-                continue
-            tts.say(part)
-        tts.runAndWait()
-
-greetings = [
-    'Hello, {}!',
-    'Welcome, {}!',
-    'Hi, {}!',
-    'Oh hai, {}!',
-]
-re_greetings = [
-    'Hello again, {}!',
-    'Welcome back, {}!',
-    'Long time no see, {}!',
-]
+            tts_message = url_re.sub('URL', tts_message)
+            parts = re.split(r'[?.;,!]+', tts_message)
+            for part in parts:
+                if not part.strip():
+                    continue
+                tts.say(part)
+            tts.runAndWait()
+        elif author_name == MISSING_AUTHOR_NAME:
+            msg_start = message_content.split(',')[0]
+            if msg_start in greet_starts:
+                name = message_content.split(',')[1].split('!')[0].lstrip()
+                tts.say(f"new arrival to chat: {name}")
+                tts.runAndWait()
 
 
 async def send(channel, message):
     if channel.name.lower() not in talk_channels:
         return
-    print("WOULD HAVE SAID IN CHAT:", message)
-    # await channel.send(message)
+#    print("WOULD HAVE SAID IN CHAT:", message)
+    await channel.send(message)
 
 
 @bot.event(name='event_join')
@@ -565,6 +647,11 @@ async def event_join(channel, user):
     if greetlist:
         greeting = random.choice(greetlist)
         message = greeting.format(user.name)
+        message += (
+            f" I'm a robot! "
+            f"Welcome to {next(robot_coffee_shop_name_generator)}. "
+            f"{next(robot_greeting_generator)}"
+        )
         # logger.debug(now(), message)
         logger.info(f'{now()} ({channel.name}): {user.name} joined')
         await send(channel, message)

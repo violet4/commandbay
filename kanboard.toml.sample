@@ -1,0 +1,8 @@
+[server]
+username = 'username'
+password = '***'
+url = 'https://my_domain/jsonrpc.php'
+# optional path to custom Certificate Authority
+#cafile = '/home/violet/violet.com.crt'
+
+project_name = 'my project'

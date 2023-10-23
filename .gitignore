@@ -7,3 +7,5 @@ __pycache__
 plugins/*.py
 .fleet
 .idea
+bot_memory.db
+kanboard.toml
