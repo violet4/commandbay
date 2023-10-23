@@ -17,7 +17,9 @@ def list_log_levels():
 
 def parse_args(default_log_level:str=Namespace.log_level) -> type[Namespace]:
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('--log-level', default=default_log_level, help=f"log level. default: %(default)s; options: {list_log_levels()}")
-    arg_parser.add_argument('--log-level', default='INFO', type=str, help='')
+    arg_parser.add_argument(
+        '--log-level', default=default_log_level, type=str,
+        help=f"log level. default: %(default)s; options: {list_log_levels()}",
+    )
     args = arg_parser.parse_args(namespace=Namespace)
     return args

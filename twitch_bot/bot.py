@@ -30,14 +30,14 @@ from twitchio.chatter import Chatter, PartialChatter
 from twitchio.ext.commands.core import Context
 from twitchio.user import User
 
-from .utils import load_env, now, nowstr, url_re
-from .cli import parse_args
-from .db import (
+from twitch_bot.utils import load_env, now, nowstr, url_re
+from twitch_bot.cli import parse_args
+from twitch_bot.db import (
     get_time_user_seen_last, update_user_seen_last,
     insert_history, update_user_exited_last,
 )
-from .tts import tts
-from .greetings import (
+from twitch_bot.tts import tts
+from twitch_bot.greetings import (
     re_greetings, greetings, greet_starts,
     robot_coffee_shop_name_generator, robot_greeting_generator,
 )
