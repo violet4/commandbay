@@ -24,6 +24,7 @@ import random
 from kanboard_integ import Kanboard
 
 from twitchio.ext.commands import Bot as TwitchBot
+from twitchio.ext.commands import command
 from twitchio.message import Message
 from twitchio.channel import Channel
 from twitchio.chatter import Chatter, PartialChatter
@@ -128,12 +129,12 @@ class Bot(TwitchBot):
         # await ws.send_privmsg(channel, f"/me has landed!")
         # await ws.send_privmsg(channel, f"👋")
 
-    # @bot.command(name='song')
+    @command(name='song')
     async def song(self, ctx:Context):
         logger.info("song command:\nctx: %s", ctx)
 
 
-    # @bot.command(name='remind', aliases=['r', 'reminder'])
+    @command(name='remind', aliases=['r', 'reminder'])
     async def remind(self, ctx:Context):
         #TODO:generalize command authentication
         if (ctx.author.name or '').lower() not in {'terra_tera', 'violet_revenant'}:
