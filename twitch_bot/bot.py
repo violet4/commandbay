@@ -18,7 +18,7 @@ import os
 import importlib
 import sys
 import logging
-from typing import Any, Union, Optional
+from typing import Union, Optional, List
 import random
 
 from kanboard_integ import Kanboard
@@ -133,14 +133,15 @@ class Bot(TwitchBot):
     async def song(self, ctx:Context):
         logger.info("song command:\nctx: %s", ctx)
 
-
     @command(name='remind', aliases=['r', 'reminder'])
     async def remind(self, ctx:Context):
         #TODO:generalize command authentication
-        if (ctx.author.name or '').lower() not in {'terra_tera', 'violet_revenant'}:
+        author = (ctx.author.name or 'nonexistent_user').lower()
+        if author not in {'terra_tera', 'violet_revenant'}:
             return
         remind_title = (str(ctx.message.content) or ' ').split(' ', 1)[1]
         self.kb.add_task(remind_title)
+        # await self.send(ctx.channel, msg)
 
     # @bot.event(name='event_message')
     async def event_message(self, msg:Message):
@@ -268,7 +269,6 @@ class Bot(TwitchBot):
 
         update_user_seen_last(user)
 
-
     # @bot.event(name='event_part')
     async def event_part(self, chatter:Chatter, *args):
         args = list(args)
@@ -282,7 +282,6 @@ class Bot(TwitchBot):
         logger.info('%s:ch(%s): chatter has parted: %s', nowstr, channel, chatter)
         if channel is not None:
             update_user_exited_last(chatter, channel)
-
 
     def print_startup_message_file(self):
         startup_file_path = os.path.join(self.this_dir, 'startup_message.txt')
