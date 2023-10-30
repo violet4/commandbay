@@ -15,3 +15,7 @@ CHANNEL=
 # how long after we've seen a user to re-greet them
 # default 3 hours
 re_greet_minutes=180
+
+# spotify commmands
+SPOTIPY_CLIENT_ID=''
+SPOTIPY_CLIENT_SECRET=''
