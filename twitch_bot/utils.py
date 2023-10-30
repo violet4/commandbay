@@ -2,8 +2,13 @@ import random
 import datetime
 import re
 from typing import Callable
+import logging
 
 url_re = re.compile(r'https?://[^ ]+')
+
+log_format = '%(levelname)s:%(module)s:%(asctime)s:%(pathname)s:%(lineno)d:%(message)s'
+log_formatter = logging.Formatter(log_format)
+
 
 
 def load_env(env, env_file:str):

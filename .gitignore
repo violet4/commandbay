@@ -9,3 +9,4 @@ plugins/*.py
 .idea
 bot_memory.db
 kanboard.toml
+spotipy/

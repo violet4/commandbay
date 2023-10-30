@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 view all events in order:
 select history.timestamp,users.user,channels.channel,events.event from users inner join history using(userid) inner join events using(eventid) inner join channels using(channelid) order by timestamp;
@@ -42,6 +41,7 @@ from twitch_bot.greetings import (
     re_greetings, greetings, greet_starts,
     robot_coffee_shop_name_generator, robot_greeting_generator,
 )
+from twitch_bot.spotify import Spotify
 
 MISSING_AUTHOR_NAME = 'missing_author_name'
 NO_MESSAGE_CONTENT = 'no_message_content'
@@ -51,15 +51,20 @@ logger.setLevel(level=logging.INFO)
 
 
 class Bot(TwitchBot):
-    def __init__(self):
-        self.kb = Kanboard()
+    def __init__(self, kb:Optional[Kanboard]=None):
+        self.kb = kb
+
         env = dict()
         self.this_dir = os.path.dirname(os.path.abspath(__file__))
         env_file = os.path.join(os.path.dirname(self.this_dir), 'env.txt')
+        logger.debug("env_file %s", env_file)
         env = load_env(env, env_file)
         logger.debug('env: %s', env)
         self.owner_username = env['OWNER_ID']
         self.bot_nick = env['BOT_NICK']
+        self.name_translation = {
+            k.lower():v for k,v in map(lambda x: x.split(':'), env.get('NAME_TRANSLATIONS', '').split(';'))
+        }
         channels = env.get('CHANNELS', '').split(',')
         logger.info("channels: %s", channels)
         self.talk_channels = set(env.get('TALK_CHANNELS', '').lower().split(','))
@@ -73,6 +78,12 @@ class Bot(TwitchBot):
             additional_ignores = list(filter(None, env[ignore_key].rstrip().split(',')))
             self.ignore_users.update(additional_ignores)
         self.command_prefix = env['BOT_PREFIX']
+
+        for spotify_key in ('SPOTIPY_CLIENT_ID', 'SPOTIPY_CLIENT_SECRET'):
+            os.environ[spotify_key] = env[spotify_key]
+        # https://developer.spotify.com/documentation/web-api/concepts/scopes
+        self.spotify = Spotify()
+
 
         self.command_env = {
             'tts': tts,
@@ -129,12 +140,10 @@ class Bot(TwitchBot):
         # await ws.send_privmsg(channel, f"/me has landed!")
         # await ws.send_privmsg(channel, f"👋")
 
-    @command(name='song')
-    async def song(self, ctx:Context):
-        logger.info("song command:\nctx: %s", ctx)
-
     @command(name='remind', aliases=['r', 'reminder'])
     async def remind(self, ctx:Context):
+        if self.kb is None:
+            return
         #TODO:generalize command authentication
         author = (ctx.author.name or 'nonexistent_user').lower()
         if author not in {'terra_tera', 'violet_revenant'}:
@@ -195,6 +204,9 @@ class Bot(TwitchBot):
         # don't TTS yourself
         if tts.tts_enabled:
             if author_name not in (self.owner_username, MISSING_AUTHOR_NAME):
+                if author_name.lower() in self.name_translation:
+                    author_name = str(self.name_translation.get(author_name.lower()))
+                    author_name = f'friend {author_name}'
                 tts.say(author_name)
                 tts.say('says')
                 tts_message = message_content
@@ -255,7 +267,8 @@ class Bot(TwitchBot):
         ):
             greetlist = re_greetings
 
-        if greetlist:
+        #TODO:be smarter about when to do this and when not to
+        if greetlist and random.random() < 0.1:
             greeting = random.choice(greetlist)
             message = greeting.format(user.name)
             message += (
@@ -290,15 +303,31 @@ class Bot(TwitchBot):
                 for line in fr:
                     logger.info(line)
 
+    @command(name="song")
+    async def song(self, ctx: Context):
+        if self.spotify is None:
+            return
+        song_str = self.spotify.get_current_song_str()
+        print("SONG STRING", song_str)
+        if not song_str:
+            await ctx.send("Failed to get info from Spotify API")
+            return
+        await ctx.send(song_str)
+
 
 if __name__ == '__main__':
-    bot = Bot()
-    args = parse_args(default_log_level='INFO')
-    log_level = getattr(logging, args.log_level)
-    logger.setLevel(level=log_level)
-    logging.basicConfig(level=log_level)
+    from twitch_bot.utils import log_format, log_formatter
 
-    bot.print_startup_message_file()
+    args = parse_args(default_log_level='INFO')
+    log_level = getattr(logging, args.log_level.upper(), args.log_level)
+    logger.setLevel(level=log_level)
+    logging.basicConfig(level=log_level, format=log_format)
+    logging.getLogger().handlers[0].setFormatter(log_formatter)
+
+    kb = Kanboard()
+    bot = Bot(kb)
+
+    # bot.print_startup_message_file()
     try:
         bot.run()
     except KeyboardInterrupt:
