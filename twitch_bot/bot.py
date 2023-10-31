@@ -267,14 +267,15 @@ class Bot(TwitchBot):
             greetlist = re_greetings
 
         #TODO:be smarter about when to do this and when not to
-        if greetlist and random.random() < 0.1:
+        if greetlist:
             greeting = random.choice(greetlist)
             message = greeting.format(user.name)
-            message += (
-                f" I'm a robot! "
-                f"Welcome to {next(robot_coffee_shop_name_generator)}. "
-                f"{next(robot_greeting_generator)}"
-            )
+            if random.random() < 0.1:
+                message += (
+                    f" I'm a robot! "
+                    f"Welcome to {next(robot_coffee_shop_name_generator)}. "
+                    f"{next(robot_greeting_generator)}"
+                )
             # logger.debug(now(), message)
             logger.info(f'{now()} ({channel.name}): {user.name} joined')
             await self.send(channel, message)
