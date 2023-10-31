@@ -10,7 +10,6 @@ log_format = '%(levelname)s:%(module)s:%(asctime)s:%(pathname)s:%(lineno)d:%(mes
 log_formatter = logging.Formatter(log_format)
 
 
-
 def load_env(env, env_file:str):
     with open(env_file, 'r') as fr:
         for line in fr:

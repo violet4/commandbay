@@ -80,10 +80,9 @@ class Bot(TwitchBot):
         self.command_prefix = env['BOT_PREFIX']
 
         for spotify_key in ('SPOTIPY_CLIENT_ID', 'SPOTIPY_CLIENT_SECRET'):
-            os.environ[spotify_key] = env[spotify_key]
+            os.environ[spotify_key] = env.get(spotify_key, None)
         # https://developer.spotify.com/documentation/web-api/concepts/scopes
         self.spotify = Spotify()
-
 
         self.command_env = {
             'tts': tts,

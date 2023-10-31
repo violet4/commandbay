@@ -202,12 +202,34 @@ def ensure_user(username):
 
 
 def insert_history(user_or_chatter:Union[Chatter, PartialChatter,User], channel:Channel, event:str):
-    if not isinstance(user_or_chatter, twitchio.user.User):
-        logger.debug("unexpected: user is not of type Chatter")
+    acceptable_types = (twitchio.user.User, PartialChatter, User)
+    if not isinstance(user_or_chatter, acceptable_types):
+        logger.error(
+            "unexpected: user %s (type %s) is not of an acceptable type %s",
+            user_or_chatter, type(user_or_chatter),
+            acceptable_types,
+        )
         return
     eventid = ensure_event(event)
     channelid = ensure_channel(channel.name)
-    userid = ensure_user(user_or_chatter.name.strip())
+
+    username = getattr(user_or_chatter, 'name', None)
+    if username is None:
+        logger.error("Failed to get name of user_or_chatter: %s (type %s)", user_or_chatter, type(user_or_chatter))
+        return
+
+    username = username.strip()
+    userid = ensure_user(username)
+    if userid is None:
+        logger.error(
+            "failed to ensure user_or_chatter.name in database; user_or_chatter.name: %s; "
+            "user_or_chatter: %s, (type %s)",
+            username,
+            user_or_chatter,
+            type(user_or_chatter),
+        )
+        return
+
     conn.execute(
         '''INSERT INTO history VALUES (?,?,?,?)''',
         (
