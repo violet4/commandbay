@@ -16,6 +16,6 @@ CHANNEL=
 # default 3 hours
 re_greet_minutes=180
 
-# spotify commmands
-SPOTIPY_CLIENT_ID=''
-SPOTIPY_CLIENT_SECRET=''
+# spotify commmands; NO QUOTES
+SPOTIPY_CLIENT_ID=aaaaaaaaaaaaaaaaa
+SPOTIPY_CLIENT_SECRET=aaaaaaaaaaaaaaaa

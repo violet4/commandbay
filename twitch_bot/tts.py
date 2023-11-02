@@ -12,6 +12,13 @@ class TTS:
             self.tts: Engine = pyttsx3.init()
             self.tts_disabled = False
             self.tts_enabled = True
+
+            self.setProperty('volume', 0.1)
+            self.setProperty('rate', 120)
+            # if this voice isn't installed then this command is simply ignored.
+            # mbrola
+            self.setProperty('voice', 'mb-us1')
+
         except ImportError:
             pyttsx3 = None
             self.tts_disabled = True
@@ -35,5 +42,3 @@ class TTS:
 
 
 tts: TTS = TTS()
-tts.setProperty('volume', 0.1)
-
