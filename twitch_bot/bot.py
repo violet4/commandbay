@@ -17,20 +17,23 @@ import os
 import importlib
 import sys
 import logging
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Callable, Dict
 import random
 
-from kanboard_integ import Kanboard
-
+import twitchio
 from twitchio.ext.commands import Bot as TwitchBot
 from twitchio.ext.commands import command
+from twitchio.ext import pubsub
 from twitchio.message import Message
 from twitchio.channel import Channel
 from twitchio.chatter import Chatter, PartialChatter
 from twitchio.ext.commands.core import Context
 from twitchio.user import User
 
-from twitch_bot.utils import load_env, now, nowstr, url_re
+from twitch_bot.utils import (
+    load_env, now, nowstr, url_re, get_token_from_user_auth_code,
+    log_format, log_formatter, get_oauth_token,
+)
 from twitch_bot.cli import parse_args
 from twitch_bot.db import (
     get_time_user_seen_last, update_user_seen_last,
@@ -42,6 +45,7 @@ from twitch_bot.greetings import (
     robot_coffee_shop_name_generator, robot_greeting_generator,
 )
 from twitch_bot.spotify import Spotify
+from twitch_bot.kanboard_integ import Kanboard
 
 MISSING_AUTHOR_NAME = 'missing_author_name'
 NO_MESSAGE_CONTENT = 'no_message_content'
@@ -50,37 +54,81 @@ logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)
 
 
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_environment() -> Dict:
+    env = dict()
+    env_file = os.path.join(os.path.dirname(THIS_DIR), 'env.txt')
+    logger.debug("env_file %s", env_file)
+    env = load_env(env, env_file)
+    return env
+
+
+class Environment:
+    TMI_TOKEN:str
+    OWNER_ID:str
+    CLIENT_ID:str
+    BOT_NICK:str
+    BOT_PREFIX:str = '!'
+    CHANNELS:str
+    TALK_CHANNELS:str
+
+    re_greet_minutes:int
+
+    IGNORE_BOTS:str = ''
+    IGNORE_USERS:str = ''
+    NAME_TRANSLATIONS:str = 'somelongusername:nick;anotherlonguser:nickie'
+
+    SPOTIPY_CLIENT_ID:str = ''
+    SPOTIPY_CLIENT_SECRET:str = ''
+
+
 class Bot(TwitchBot):
-    def __init__(self, kb:Optional[Kanboard]=None):
+    def __init__(self, kb:Optional[Kanboard]=None, env:Union[Callable[[],Dict],Dict]=load_environment):
         self.kb = kb
 
-        env = dict()
-        self.this_dir = os.path.dirname(os.path.abspath(__file__))
-        env_file = os.path.join(os.path.dirname(self.this_dir), 'env.txt')
-        logger.debug("env_file %s", env_file)
-        env = load_env(env, env_file)
-        logger.debug('env: %s', env)
-        self.owner_username = env['OWNER_ID']
-        self.bot_nick = env['BOT_NICK']
-        self.name_translation = {
-            k.lower():v for k,v in map(lambda x: x.split(':'), env.get('NAME_TRANSLATIONS', '').split(';'))
-        }
+        self.pubsub = pubsub.PubSubPool(self)
+
+        if isinstance(env, Callable):
+            env = env()
+        if not isinstance(env, dict):
+            raise Exception("environment must be of type Union[Callable[[],Dict],Dict]")
+
+        self.env = env
+        # logger.debug('env: %s', env)
         channels = env.get('CHANNELS', '').split(',')
+        self.command_prefix = self.env['BOT_PREFIX']
+        super().__init__(
+            token=self.env['TMI_TOKEN'],
+            client_id=self.env['CLIENT_ID'],
+            client_secret=self.env['CLIENT_SECRET'],
+            nick=self.env['BOT_NICK'],
+            prefix=self.command_prefix,
+            initial_channels=channels,
+        )
+
+        self.owner_username = self.env['OWNER_ID']
+        self.bot_nick = self.env['BOT_NICK']
+        self.name_translation = {
+            k.lower():v
+            for k,v in
+            map(lambda x: x.split(':'), self.env.get('NAME_TRANSLATIONS', '').split(';'))
+        }
         logger.info("channels: %s", channels)
-        self.talk_channels = set(env.get('TALK_CHANNELS', '').lower().split(','))
-        self.re_greet_minutes = int(env['re_greet_minutes'])
+        self.talk_channels = set(self.env.get('TALK_CHANNELS', '').lower().split(','))
+        self.re_greet_minutes = int(self.env['re_greet_minutes'])
         self.ignore_users = {
             # owner_username.lower(),
             self.bot_nick.lower(),
             # channel.lower()
         }
         for ignore_key in ('IGNORE_BOTS', 'IGNORE_USERS'):
-            additional_ignores = list(filter(None, env[ignore_key].rstrip().split(',')))
+            additional_ignores = list(filter(None, self.env[ignore_key].rstrip().lower().split(',')))
             self.ignore_users.update(additional_ignores)
-        self.command_prefix = env['BOT_PREFIX']
 
         for spotify_key in ('SPOTIPY_CLIENT_ID', 'SPOTIPY_CLIENT_SECRET'):
-            os.environ[spotify_key] = env.get(spotify_key, None)
+            os.environ[spotify_key] = self.env.get(spotify_key, None)
         # https://developer.spotify.com/documentation/web-api/concepts/scopes
         self.spotify = Spotify()
 
@@ -88,20 +136,35 @@ class Bot(TwitchBot):
             'tts': tts,
         }
 
-        super().__init__(
-            token=env['TMI_TOKEN'],
-            # set up the bot
-            irc_token=env['TMI_TOKEN'],
-            client_id=env['CLIENT_ID'],
-            nick=env['BOT_NICK'],
-            prefix=self.command_prefix,
-            initial_channels=channels,
-        )
+    async def do_subscribe(self, chan_name:str):
+        """
+        https://dev.twitch.tv/docs/pubsub/
+
+        endpoint       | permissions required
+        ---------------+--------------------------
+        bits           | bits:read
+        channel points | channel:read:redemptions
+        """
+        channels: List[twitchio.user.SearchUser] = await self.search_channels(chan_name)
+        channel = [chan for chan in channels if chan.name.lower()==chan_name.lower()]
+        if not channel:
+            logger.info("couldn't get channel for channel name: %s", chan_name)
+            return
+        chan = channel[0]
+        logger.info("attempting to subscribe to channel: %s", chan)
+
+        self.event(name="event_pubsub_bits")(self.event_pubsub_bits)
+        self.event(name="event_pubsub_channel_points")(self.event_pubsub_channel_points)
+        topics = [
+            pubsub.channel_points(self.env['TMI_TOKEN'])[chan.id],
+            pubsub.bits(self.env['TMI_TOKEN'])[chan.id],
+        ]
+        await self.pubsub.subscribe_topics(topics)
 
     def load_plugins(self):
         # import plugin commands
-        plugins_dir = os.path.join(os.path.dirname(self.this_dir), 'plugins')
-        sys.path.append(self.this_dir)
+        plugins_dir = os.path.join(os.path.dirname(THIS_DIR), 'plugins')
+        sys.path.append(THIS_DIR)
         for module in os.listdir(plugins_dir):
             if not module.endswith('.py'):
                 continue
@@ -129,9 +192,17 @@ class Bot(TwitchBot):
                 orig_fn = fn
                 for name in names:
                     # register the command with the twitch bot
-                    bot.command(name=name)(orig_fn)
+                    self.command(name=name)(orig_fn)
 
-    # @commands.event(name='event_ready')
+    async def event_pubsub_bits(self, event: pubsub.PubSubBitsMessage):
+        bits_used = event.bits_used
+        content = event.message.content
+        username = getattr(event.user, 'name')
+        logger.info("%s used %s bits, content: %s", username, bits_used, content)
+
+    async def event_pubsub_channel_points(self, event: pubsub.PubSubChannelPointsMessage):
+        print(event.user.name, event.reward.title, event.reward.cost)
+
     async def event_ready(self):
         'Called once when the bot goes online.'
         logger.info(f"{self.bot_nick} is online!")
@@ -171,7 +242,7 @@ class Bot(TwitchBot):
         logger.debug(f'{now()} ({channel_name}) {author_name}: {msg.content}')
 
         user_name = getattr(getattr(msg, 'author'), 'name', str(random.randbytes(20)))
-        if user_name in self.ignore_users:
+        if user_name.lower() in self.ignore_users:
             logger.debug('ignoring entity and stopping processing: %s', user_name)
             return
 
@@ -183,7 +254,7 @@ class Bot(TwitchBot):
             #TODO:may need to handle parsing a bit more intelligently
             command = message_content.split()[0]
             command = command[1:]  # chop off the command prefix
-            if command not in bot.commands and command!='song':
+            if command not in self.commands and command!='song':
                 logger.warning(
                     f'%s:user %s tried to use nonexistent '
                     f'command %s: %s',
@@ -191,7 +262,7 @@ class Bot(TwitchBot):
                 )
                 return
 
-            await bot.handle_commands(msg)
+            await self.handle_commands(msg)
             return
 
         if isinstance(author, Chatter) and isinstance(channel, Channel):
@@ -297,7 +368,7 @@ class Bot(TwitchBot):
             update_user_exited_last(chatter, channel)
 
     def print_startup_message_file(self):
-        startup_file_path = os.path.join(self.this_dir, 'startup_message.txt')
+        startup_file_path = os.path.join(THIS_DIR, 'startup_message.txt')
         if os.path.exists(startup_file_path):
             with open(startup_file_path, 'r') as fr:
                 for line in fr:
@@ -315,20 +386,38 @@ class Bot(TwitchBot):
         await ctx.send(song_str)
 
 
-if __name__ == '__main__':
-    from twitch_bot.utils import log_format, log_formatter
+scopes = [
+    'channel:read:redemptions',
+    'channel:read:subscriptions',
+    'bits:read',
 
+    'channel:bot',
+    'chat:read',
+    'chat:edit',
+]
+
+
+async def main():
     args = parse_args(default_log_level='INFO')
     log_level = getattr(logging, args.log_level.upper(), args.log_level)
     logger.setLevel(level=log_level)
     logging.basicConfig(level=log_level, format=log_format)
     logging.getLogger().handlers[0].setFormatter(log_formatter)
 
-    kb = Kanboard()
-    bot = Bot(kb)
+    env = load_environment()
 
-    # bot.print_startup_message_file()
-    try:
-        bot.run()
-    except KeyboardInterrupt:
-        sys.exit(0)
+    user_authorization_code = get_oauth_token(env['CLIENT_ID'], scopes, force=True)
+    auth_data = get_token_from_user_auth_code(env['CLIENT_ID'], env['CLIENT_SECRET'], user_authorization_code)
+    env['TMI_TOKEN'] = auth_data['access_token']
+
+    kb = Kanboard()
+    bot = Bot(kb, env=env)
+    await bot.do_subscribe('Terra_Tera')
+    await bot.start()
+
+
+if __name__ == '__main__':
+    # import logging
+    # logging.basicConfig(level=logging.DEBUG)
+    import asyncio
+    asyncio.get_event_loop().run_until_complete(main())
