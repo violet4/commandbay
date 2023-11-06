@@ -6,11 +6,8 @@ a handy twitch bot.
 * cross-platform text-to-speech using the pyttsx3 library, so you don't have to keep visually checking for messages.
 * has the ability to add commands in separate files in the plugins directory, and they automatically get loaded. a sample is included.
 
-
 How to set up:
 * `cp env_sample.txt env.txt`
 * fill out env.txt (it contains instructions on how to set it up)
-* use virtualenv or anaconda to create an environment, and install twitchio using:
-* * pip install twitchio
-* * pip install pyttsx3
-* run the bot: `python bot.py`
+* * poetry install
+* run the bot: `poetry run python twitch_bot/bot.py`
