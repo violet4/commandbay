@@ -25,19 +25,17 @@ def execute(sql):
 
 
 execute(
-'''CREATE TABLE viewers (
-    userid bigint
-    , channel text
-    , name text
-    , first_seen text
-    , last_seen text
-    , last_exited text
-)
+'''
+CREATE TABLE viewers (
+        name text
+        , last_seen text
+        , first_seen text
+        , channel text
+    , userid bigint, last_exited text);
 ''')
 execute(
-    '''CREATE unique index
-viewers_unique_userid_channel_index
-on viewers(userid,channel);
+    '''CREATE UNIQUE INDEX viewers_unique_name_channel_index
+        on viewers(name,channel);
 ''')
 
 # TODO: timestamp to bigint and save epoch time
@@ -84,6 +82,11 @@ execute(
     events_unique_event_index
     on events(event);
 ''')
+execute(
+'''CREATE UNIQUE INDEX
+    viewers_unique_userid_channel_index
+    on viewers(userid,channel);
+''')
 
 def get_time_user_seen_last(user, channel):
     cursor = conn.execute(
@@ -102,20 +105,24 @@ def get_time_user_seen_last(user, channel):
 def update_user_seen_last(user_or_chatter:Union[Chatter, PartialChatter,User]):
     now_dt = now()
     channel_name = getattr(getattr(user_or_chatter, 'channel', None), 'name', None)
+    user_id = strip(getattr(user_or_chatter, 'id', None))
+    if user_id is None:
+        return
     columns = [
-        strip(getattr(user_or_chatter, 'id', None)),       # userid
-        strip(channel_name),  # channel
-        strip(user_or_chatter.name),     # name
-        strip(now_dt),        # last_seen
-        strip(now_dt),        # first_seen
-        strip(now_dt),        # UPSERT last_seen
+        strip(user_or_chatter.name),  # userid
+        strip(channel_name),          # channel
+        strip(now_dt),                # last_seen
+        strip(now_dt),                # first_seen
+        strip(now_dt),                # last_exited
+        strip(now_dt),                # UPSERT last_seen
     ]
     INSERT_QUERY = f'''INSERT INTO
-            viewers (userid,channel,name,last_seen,first_seen,last_exited)
+            viewers (name,channel,last_seen,first_seen,last_exited)
             -- when counting number of args, don't forget last_seen=.. below
-            values (?,?,?,?,?,null)
+            values (?,?,?,?,?)
         ON CONFLICT(name,channel) DO UPDATE SET last_seen=?;
     '''
+
     try:
         conn.execute(INSERT_QUERY, columns)
     except sqlite3.IntegrityError as e:

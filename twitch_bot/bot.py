@@ -110,11 +110,13 @@ class Bot(TwitchBot):
 
         self.owner_username = self.env['OWNER_ID']
         self.bot_nick = self.env['BOT_NICK']
-        self.name_translation = {
-            k.lower():v
-            for k,v in
-            map(lambda x: x.split(':'), self.env.get('NAME_TRANSLATIONS', '').split(';'))
-        }
+        self.name_translation = dict()
+        if self.env.get('NAME_TRANSLATIONS', False):
+            self.name_translation = {
+                k.lower():v
+                for k,v in
+                map(lambda x: x.split(':'), self.env.get('NAME_TRANSLATIONS', '').split(';'))
+            }
         logger.info("channels: %s", channels)
         self.talk_channels = set(self.env.get('TALK_CHANNELS', '').lower().split(','))
         self.re_greet_minutes = int(self.env['re_greet_minutes'])
@@ -124,6 +126,8 @@ class Bot(TwitchBot):
             # channel.lower()
         }
         for ignore_key in ('IGNORE_BOTS', 'IGNORE_USERS'):
+            if ignore_key not in self.env:
+                continue
             additional_ignores = list(filter(None, self.env[ignore_key].rstrip().lower().split(',')))
             self.ignore_users.update(additional_ignores)
 
@@ -151,7 +155,7 @@ class Bot(TwitchBot):
             logger.info("couldn't get channel for channel name: %s", chan_name)
             return
         chan = channel[0]
-        logger.info("attempting to subscribe to channel: %s", chan)
+        logger.info("attempting to pubsub subscribe to channel: %s", chan)
 
         self.event(name="event_pubsub_bits")(self.event_pubsub_bits)
         self.event(name="event_pubsub_channel_points")(self.event_pubsub_channel_points)

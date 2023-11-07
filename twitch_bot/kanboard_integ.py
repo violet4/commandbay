@@ -36,6 +36,9 @@ class Kanboard(kanboard.Client):
         this_dir = os.path.dirname(this_file)
         containing_dir = os.path.dirname(this_dir)
         toml_file = os.path.join(containing_dir, 'kanboard.toml')
+        if not os.path.exists(toml_file):
+            self.project_id = self.NO_PROJECT
+            return
         with open(toml_file, 'rb') as fr:
             creds = tomllib.load(fr)['server']
         kwargs = {}
