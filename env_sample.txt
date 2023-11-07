@@ -2,8 +2,7 @@
 OWNER_ID=
 # e.g. oauth:u8... generated at https://twitchapps.com/tmi/
 TMI_TOKEN=
-# just a name to describe the bot service, e.g. my_bot
-# copied from the python code documentation: "Your application ID, used for HTTP endpoints."
+# ID found after creating an app at at https://dev.twitch.tv/console/apps
 CLIENT_ID=
 # e.g. bot_username (can be your username if you're running your bot under your own user)
 BOT_NICK=
@@ -19,3 +18,4 @@ re_greet_minutes=180
 # spotify commmands; NO QUOTES
 SPOTIPY_CLIENT_ID=aaaaaaaaaaaaaaaaa
 SPOTIPY_CLIENT_SECRET=aaaaaaaaaaaaaaaa
+IGNORE_BOTS=00rianaa,01ella
