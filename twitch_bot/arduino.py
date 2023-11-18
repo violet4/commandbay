@@ -26,6 +26,10 @@ class Arduino(serial.Serial):
         self.change_setting(self.OFF)
     def on(self):
         self.change_setting(self.ON)
+    def reset(self):
+        self.off()
+        time.sleep(1)
+        self.on()
 
     @classmethod
     def find_arduino(cls):

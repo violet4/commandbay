@@ -113,11 +113,15 @@ def arduino_power():
     power = request.json.get('power', None)
     if power is None:
         return "provide `power` in your json body", 400
-    if power not in ('on', 'off'):
+
+    if power not in ('on', 'off', 'reset'):
         return "value of `power` must be either `on` or `off`", 422
+
     if power == 'on':
         arduino.on()
     elif power == 'off':
         arduino.off()
+    elif power == 'reset':
+        arduino.reset()
 
     return 'success', 200
