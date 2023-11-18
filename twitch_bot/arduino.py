@@ -19,6 +19,21 @@ class Arduino(serial.Serial):
 
     OFF = '0\n'.encode()
     ON = '1\n'.encode()
+
+    GET_STATE = '2\n'.encode()
+    def get_state(self):
+        self.ensure_ready()
+        self.write(self.GET_STATE)
+        result = self.readline().decode().strip()
+        if result == '1':
+            return 'on'
+        elif result == '0':
+            return 'off'
+    def is_on(self):
+        return self.get_state()=='on'
+    def is_off(self):
+        return self.get_state()=='off'
+
     def change_setting(self, value:bytes):
         self.ensure_ready()
         self.write(value)
