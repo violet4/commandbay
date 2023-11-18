@@ -2,8 +2,9 @@ import random
 from typing import List
 import datetime
 import re
-from typing import Callable
+from typing import Callable, Dict
 import logging
+import os
 
 import requests
 
@@ -15,6 +16,8 @@ url_re = re.compile(r'https?://[^ ]+')
 
 log_format = '%(levelname)s:%(module)s:%(asctime)s:%(pathname)s:%(lineno)d:%(message)s'
 log_formatter = logging.Formatter(log_format)
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 #TODO:use yaml instead
@@ -28,6 +31,14 @@ def load_env(env, env_file:str):
                 continue
             k, v = line.split('=', 1)
             env[k] = v
+    return env
+
+
+def load_environment() -> Dict:
+    env = dict()
+    env_file = os.path.join(os.path.dirname(THIS_DIR), 'env.txt')
+    # logger.debug("env_file %s", env_file)
+    env = load_env(env, env_file)
     return env
 
 

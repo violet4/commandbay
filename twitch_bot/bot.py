@@ -31,7 +31,8 @@ from twitchio.ext.commands.core import Context
 from twitchio.user import User
 
 from twitch_bot.utils import (
-    load_env, now, nowstr, url_re, get_token_from_user_auth_code,
+    load_env, load_environment, now, nowstr, url_re,
+    get_token_from_user_auth_code,
     log_format, log_formatter, get_oauth_token,
 )
 from twitch_bot.cli import parse_args
@@ -55,14 +56,6 @@ logger.setLevel(level=logging.INFO)
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-def load_environment() -> Dict:
-    env = dict()
-    env_file = os.path.join(os.path.dirname(THIS_DIR), 'env.txt')
-    logger.debug("env_file %s", env_file)
-    env = load_env(env, env_file)
-    return env
 
 
 class Environment:
@@ -235,6 +228,7 @@ class Bot(TwitchBot):
         """
         message_content = getattr(msg, 'content', NO_MESSAGE_CONTENT)
         author: Union["Chatter", "PartialChatter"] = msg.author
+        logger.info("chat message: %s %s", author, message_content)
         if isinstance(author, Chatter):
             update_user_seen_last(author)
             author_name = author.name
