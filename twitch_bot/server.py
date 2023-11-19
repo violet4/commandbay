@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 initialize_tts()
 
-@app.route("/")
+@app.get("/")
 async def hello_world():
     return 'this is a sample message from an http call'
 
