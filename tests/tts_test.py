@@ -17,6 +17,7 @@ def test_read_item():
     response = client.post("/tts", json=Message(user='user', text='message text').model_dump())
     response = client.post("/tts", json=Message(user='user', text='message text').model_dump())
     response = client.post("/tts", json=Message(user='user', text='message text').model_dump())
+    time.sleep(1)
 
 # @pytest.mark.parametrize("item_id", [101, 102, 103, 104, 105])
 # def test_read_item_error(item_id):

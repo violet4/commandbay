@@ -19,8 +19,8 @@ class Message(BaseModel):
     text: str
 
 
-def do_tts(user:str=Body(...), message:str=Body(...)):
-    message = unescape(message)
+def do_tts(user:str=Body(...), text:str=Body(...)):
+    message = unescape(text)
     _tts_queue.put(Message(user=user, text=message))
     return {'success': True}
 
