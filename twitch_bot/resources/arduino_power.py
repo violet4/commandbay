@@ -1,15 +1,16 @@
 from enum import Enum
 from errno import ERESTART
-import json
-import os
-from types import NoneType
-from typing import Optional, Union
+from typing import Union
 
-from fastapi import APIRouter, Body, Request
+from fastapi import APIRouter, Body
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 
 from twitch_bot.core.arduino import Arduino
+
+
+_arduino = Arduino()
+arduino_router = APIRouter()
 
 
 class PowerCommandEnum(str, Enum):
@@ -26,14 +27,6 @@ class PowerStatusModel(BaseModel):
     on: bool
 
 
-async def log_request_body(request: Request):
-    body = await request.body()
-    body_text = body.decode()
-    body_dict = json.loads(body_text)
-    print("Request body:", body_dict)  # Log the request body
-    # Convert the body back to a format that can be used by the endpoint
-    return body_dict
-
 class ArduinoError(BaseModel):
     message: str
 
@@ -45,8 +38,6 @@ class ErrorResponseModel(BaseModel):
 class SuccessResponseModel(BaseModel):
     success: bool
 
-_arduino = Arduino()
-arduino_router = APIRouter()
 
 @arduino_router.get(
     '/power',
@@ -61,6 +52,7 @@ async def get():
         raise HTTPException(503, detail=error_response.model_dump())
 
     return PowerStatusModel(on=is_on)
+
 
 @arduino_router.put(
     '/power',

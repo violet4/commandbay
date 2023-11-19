@@ -35,15 +35,15 @@ class Arduino(serial.Serial):
             self.port = self.find_arduino()
             self.open()
             time.sleep(2)
-            exception = self._test_write()
-            if isinstance(exception, Exception):
-                raise exception
+            exception2 = self._test_write()
+            if isinstance(exception2, Exception):
+                raise exception2
 
         return True
 
     def _test_write(self):
         try:
-            self.write('-\n'.encode())
+            self.write(b'-1\n')
         except Exception as e:
             return e
 
