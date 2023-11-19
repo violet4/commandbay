@@ -9,7 +9,6 @@ logger.setLevel(level=logging.INFO)
 logging.basicConfig(level=logging.INFO)
 
 
-@app.route("/log", methods=['POST'])
 def log_message():
     if request.method != 'POST':
         return 'only POST method supported', 405

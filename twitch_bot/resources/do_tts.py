@@ -6,7 +6,6 @@ from twitch_bot.core.tts import tts
 from twitch_bot.resources.app import app
 
 
-@app.route("/tts", methods=['POST'])
 def do_tts():
     if (not tts) or tts.tts_disabled:
         return 'tts is not enabled', 503

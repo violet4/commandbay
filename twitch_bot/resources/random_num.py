@@ -7,7 +7,6 @@ from flask import request
 import random
 
 
-@app.route("/random/random")
 def random_num():
     max_val = request.args.get('max', None)
     if max_val is None:

@@ -6,7 +6,6 @@ from twitch_bot.core.kanboard import Kanboard
 kb = Kanboard()
 
 
-@app.route("/kanboard/new", methods=['POST'])
 def kanboard():
     if kb is None:
         return 'kanboard connection is not established', 503
