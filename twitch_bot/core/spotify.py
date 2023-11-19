@@ -47,9 +47,7 @@ class Spotify(Spotipy):
         """
         if self.next_song_info_time > 0 and time.time() < self.next_song_info_time:
             remaining = self.next_song_info_time - time.time()
-            return f"{self.current_song_info} - Ends in {remaining//60:.0f}:{remaining%60//1:>02.0f} seconds"
-            # logger.warning(f"called too soon; wait until current song ends in {remaining:.1f} seconds")
-            # return self.current_song_info if force_response else ''
+            return f"{self.current_song_info} - Ends in {remaining//60:.0f}:{remaining%60//1:>02.0f}"
 
         pb = self._get_current_playback()
         if 'error' in pb:

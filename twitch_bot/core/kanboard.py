@@ -34,7 +34,7 @@ class Kanboard(kanboard.Client):
         self.added_reminders = set()
         this_file = os.path.abspath(__file__)
         this_dir = os.path.dirname(this_file)
-        containing_dir = os.path.dirname(this_dir)
+        containing_dir = os.path.dirname(os.path.dirname(this_dir))
         toml_file = os.path.join(containing_dir, 'kanboard.toml')
         if not os.path.exists(toml_file):
             self.project_id = self.NO_PROJECT

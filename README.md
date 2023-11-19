@@ -10,4 +10,4 @@ A handy twitch bot.
 * `cp env_sample.txt env.txt`
 * fill out env.txt (it contains instructions on how to set it up)
 * * poetry install
-* run the bot: `poetry run python twitch_bot/bot.py`
+* run the bot: `python start_server.py`

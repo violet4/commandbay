@@ -1,5 +1,6 @@
 from enum import Enum
 import os
+from typing import Optional
 
 from fastapi import APIRouter, Body
 
@@ -11,26 +12,37 @@ class SpotifyMethod(Enum):
     ADD = 'add'
 
 
-class SpotifyResource:
-    router = APIRouter()
-    init_every_request = False
+spotify_router = APIRouter()
+_spotify: Optional[Spotify] = None
 
-    def __init__(self):
-        env = load_environment()
-        for spotify_key in ('SPOTIPY_CLIENT_ID', 'SPOTIPY_CLIENT_SECRET'):
-            os.environ[spotify_key] = env.get(spotify_key, None)
-        self._spotify = Spotify()
 
-    @router.get('/song')
-    async def get_current_song(self):
-        song_str = self._spotify.get_current_song_str()
-        return {'current_song': song_str}
+def initialize_spotify():
+    global _spotify
+    env = load_environment()
+    for spotify_key in ('SPOTIPY_CLIENT_ID', 'SPOTIPY_CLIENT_SECRET'):
+        os.environ[spotify_key] = env.get(spotify_key, None)
+    _spotify = Spotify()
 
-    @router.put('/song')
-    async def put(self, method:SpotifyMethod=Body(...)):
-        if method == 'add':
-            error_dict = self._spotify.add()
-            if error_dict is None:
-                return {'success': True}
-            else:
-                return {'errors': [error_dict]}
+
+def verify_initialized():
+    if _spotify is None:
+        raise Exception("spotify not initialized; must call initialize_spotify()")
+    return _spotify
+
+
+@spotify_router.get('/song')
+async def get_current_song():
+    _spotify = verify_initialized()
+    song_str = _spotify.get_current_song_str()
+    return {'current_song': song_str}
+
+
+@spotify_router.put('/song')
+async def put(method:SpotifyMethod=Body(...)):
+    _spotify = verify_initialized()
+    if method == 'add':
+        error_dict = _spotify.add()
+        if error_dict is None:
+            return {'success': True}
+        else:
+            return {'errors': [error_dict]}
