@@ -1,24 +1,18 @@
+from enum import Enum
 import os
 
-from flask import jsonify, request
-from flask.views import MethodView
-from pydantic import BaseModel, validator
+from fastapi import APIRouter, Body
 
 from twitch_bot.core.utils import load_environment
 from twitch_bot.core.spotify import Spotify
 
 
-class SpotifyAdd(BaseModel):
-    method: str
-
-    @validator('method')
-    def method_must_be_add(cls, v):
-        if v != 'add':
-            raise ValueError('method must be "add"')
-        return v
+class SpotifyMethod(Enum):
+    ADD = 'add'
 
 
-class SpotifyResource(MethodView):
+class SpotifyResource:
+    router = APIRouter()
     init_every_request = False
 
     def __init__(self):
@@ -27,19 +21,16 @@ class SpotifyResource(MethodView):
             os.environ[spotify_key] = env.get(spotify_key, None)
         self._spotify = Spotify()
 
-    def get(self):
+    @router.get('/song')
+    async def get_current_song(self):
         song_str = self._spotify.get_current_song_str()
-        return jsonify({'current_song': song_str})
+        return {'current_song': song_str}
 
-    def put(self):
-        try:
-            spotify_method_data = SpotifyAdd(**(request.json or {}))
-        except Exception as err:
-            return jsonify({'errors': [str(err)]}), 400
-
-        if spotify_method_data.method == 'add':
-            error = self._spotify.add()
-            if error is None:
-                return 'success!', 200
+    @router.put('/song')
+    async def put(self, method:SpotifyMethod=Body(...)):
+        if method == 'add':
+            error_dict = self._spotify.add()
+            if error_dict is None:
+                return {'success': True}
             else:
-                return str(error), 200
+                return {'errors': [error_dict]}

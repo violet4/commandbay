@@ -1,50 +1,82 @@
 from enum import Enum
+from errno import ERESTART
+import json
 import os
+from types import NoneType
+from typing import Optional, Union
 
-from flask import jsonify, request
-from flask.views import MethodView
-from pydantic import BaseModel, validator
+from fastapi import APIRouter, Body, Request
+from fastapi.exceptions import HTTPException
+from pydantic import BaseModel
 
-from twitch_bot.core.utils import load_environment
 from twitch_bot.core.arduino import Arduino
 
 
-class PowerCommand(Enum):
-    ON = 'on'
-    OFF = 'off'
-    RESET = 'reset'
+class PowerCommandEnum(str, Enum):
+    on = 'on'
+    off = 'off'
+    reset = 'reset'
 
 
-class ArduinoPut(BaseModel):
-    power: PowerCommand
+class PowerCommandModel(BaseModel):
+    power: PowerCommandEnum
 
 
-class ArduinoResource(MethodView):
-    init_every_request = False
+class PowerStatusModel(BaseModel):
+    on: bool
 
-    def __init__(self):
-        env = load_environment()
-        for spotify_key in ('SPOTIPY_CLIENT_ID', 'SPOTIPY_CLIENT_SECRET'):
-            os.environ[spotify_key] = env.get(spotify_key, None)
-        self._ard = Arduino()
 
-    def get(self):
-        is_on = self._ard.is_on()
-        return jsonify({'on': is_on})
+async def log_request_body(request: Request):
+    body = await request.body()
+    body_text = body.decode()
+    body_dict = json.loads(body_text)
+    print("Request body:", body_dict)  # Log the request body
+    # Convert the body back to a format that can be used by the endpoint
+    return body_dict
 
-    def put(self):
-        try:
-            command_data = ArduinoPut(**(request.json or {}))
-        except Exception as err:
-            return jsonify({'errors': [str(err)]}), 400
+class ArduinoError(BaseModel):
+    message: str
 
-        if command_data.power == PowerCommand.ON:
-            self._ard.on()
-        elif command_data.power == PowerCommand.OFF:
-            self._ard.off()
-        elif command_data.power == PowerCommand.RESET:
-            self._ard.reset()
 
-        resp = jsonify({'success': True})
-        print("resp:", resp)
-        return resp
+class ErrorResponseModel(BaseModel):
+    error: str
+    detail: str
+
+class SuccessResponseModel(BaseModel):
+    success: bool
+
+_arduino = Arduino()
+arduino_router = APIRouter()
+
+@arduino_router.get(
+    '/power',
+    response_model=Union[PowerStatusModel, ErrorResponseModel],
+    responses={503: {"model": ErrorResponseModel}}
+)
+async def get():
+    try:
+        is_on = _arduino.is_on()
+    except Exception as e:
+        error_response = ErrorResponseModel(error="couldn't communicate with arduino", detail=str(e))
+        raise HTTPException(503, detail=error_response.model_dump())
+
+    return PowerStatusModel(on=is_on)
+
+@arduino_router.put(
+    '/power',
+    response_model=Union[SuccessResponseModel, ErrorResponseModel],
+    responses={503: {"model": ErrorResponseModel}}
+)
+async def update_arduino_power(command:PowerCommandModel=Body(...)):
+    try:
+        if command.power == PowerCommandEnum.on:
+            _arduino.on()
+        elif command.power == PowerCommandEnum.off:
+            _arduino.off()
+        elif command.power == PowerCommandEnum.reset:
+            _arduino.reset()
+    except Exception as e:
+        error = ErrorResponseModel(error="couldn't send command to the arduino", detail=str(e))
+        raise HTTPException(503, detail=error.model_dump())
+
+    return SuccessResponseModel(success=True)

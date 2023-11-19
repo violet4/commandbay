@@ -1,27 +1,12 @@
 import logging
 
-from flask import request
-
-from twitch_bot.resources.app import app
+from fastapi import Body
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)
 logging.basicConfig(level=logging.INFO)
 
 
-def log_message():
-    if request.method != 'POST':
-        return 'only POST method supported', 405
-
-    if request.json is None:
-        return 'no request data provided', 400
-
-    message = request.json.get('message', None)
-    if message is None:
-        return f"'message' required in the json body", 400
-    if not isinstance(message, str):
-        return f'unexpected message type; expected str, got %s' % type(message), 422
-
+def log_message(message:str=Body(...)):
     logger.info(message)
-
-    return 'success', 200
+    return {'success': True}

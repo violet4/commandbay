@@ -11,9 +11,10 @@ twitchio = "^2.8.2"
 pyttsx3 = "^2.90"
 kanboard = "^1.1.5"
 spotipy = "^2.23.0"
-flask = "^3.0.0"
 pyserial = "^3.5"
 pydantic = "^2.5.1"
+uvicorn = "^0.24.0.post1"
+fastapi = "^0.104.1"
 
 [build-system]
 requires = ["poetry-core"]
