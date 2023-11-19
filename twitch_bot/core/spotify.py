@@ -1,10 +1,11 @@
 import time
 import logging
+from typing import Optional
 
 from spotipy.client import Spotify as Spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
-from twitch_bot.utils import log_formatter
+from twitch_bot.core.utils import log_formatter
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,16 @@ class Spotify(Spotipy):
         self.current_song_info = full_str
         remaining = remaining_seconds
         return f"{self.current_song_info} - Ends in {remaining//60:.0f}:{remaining%60//1:>02.0f}"
+
+    def add(self) -> Optional[dict]:
+        """
+        :retval: None if success, error dict otherwise
+        """
+        pb = self._get_current_playback()
+        if pb is None:
+            return {'message': 'failed to get current playback info from spotify'}
+        return None
+
 
 
 __all__ = (

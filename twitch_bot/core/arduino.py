@@ -3,6 +3,7 @@ import time
 import glob
 from typing import Optional
 
+
 class Arduino(serial.Serial):
     def __init__(self, path:Optional[str]=None):
         path = self.find_arduino()

@@ -30,23 +30,23 @@ from twitchio.chatter import Chatter, PartialChatter
 from twitchio.ext.commands.core import Context
 from twitchio.user import User
 
-from twitch_bot.utils import (
+from twitch_bot.core.utils import (
     load_env, load_environment, now, nowstr, url_re,
     get_token_from_user_auth_code,
     log_format, log_formatter, get_oauth_token,
 )
 from twitch_bot.cli import parse_args
-from twitch_bot.db import (
+from twitch_bot.core.db import (
     get_time_user_seen_last, update_user_seen_last,
     insert_history, update_user_exited_last,
 )
-from twitch_bot.tts import tts
-from twitch_bot.greetings import (
+from twitch_bot.core.tts import tts
+from twitch_bot.core.greetings import (
     re_greetings, greetings, greet_starts,
     robot_coffee_shop_name_generator, robot_greeting_generator,
 )
-from twitch_bot.spotify import Spotify
-from twitch_bot.kanboard_integ import Kanboard
+from twitch_bot.core.spotify import Spotify
+from twitch_bot.core.kanboard import Kanboard
 
 MISSING_AUTHOR_NAME = 'missing_author_name'
 NO_MESSAGE_CONTENT = 'no_message_content'

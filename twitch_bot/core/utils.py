@@ -1,3 +1,7 @@
+import cProfile
+import pstats
+import io
+from functools import wraps
 import random
 from typing import List
 import datetime
@@ -36,7 +40,7 @@ def load_env(env, env_file:str):
 
 def load_environment() -> Dict:
     env = dict()
-    env_file = os.path.join(os.path.dirname(THIS_DIR), 'env.txt')
+    env_file = os.path.join(os.path.dirname(os.path.dirname(THIS_DIR)), 'env.txt')
     # logger.debug("env_file %s", env_file)
     env = load_env(env, env_file)
     return env
@@ -154,3 +158,22 @@ def get_token_from_user_auth_code(client_id, client_secret, user_authorization_c
     # }
     data = resp.json()
     return data
+
+
+def profiled(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        pr = cProfile.Profile()
+        pr.enable()
+
+        result = fn(*args, **kwargs)
+
+        pr.disable()
+        s = io.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+
+        return result
+    return wrapper
