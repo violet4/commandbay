@@ -11,3 +11,4 @@ A handy twitch bot.
 * fill out env.txt (it contains instructions on how to set it up)
 * * poetry install
 * run the bot: `python start_server.py`
+* Test it out: visit http://localhost:5000/docs in your web browser to see and interact with the API through a SwaggerUI
