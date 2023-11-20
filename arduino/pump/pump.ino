@@ -1,8 +1,11 @@
 #include <AFMotor.h>
 #include <string.h>
+#include "PowerSupply.h"
 
 static const uint8_t buttonPin = A0;
 const int speaker_pin = 9;
+const int power_supply_relay_pin = 52;
+
 
 // Frequencies of musical notes
 const int melody[] = {262, 294, 330, 349, 392, 440, 494, 523};
@@ -53,6 +56,16 @@ public:
     void setup() override {
         Serial.begin(9600);
     }
+};
+
+class PowerSupplyActuator: public TimedActuator {
+private:
+    PowerSupply powerSupply;
+    void do_on() {powerSupply.on();}
+    void do_off() {powerSupply.off();}
+public:
+    PowerSupplyActuator(PowerSupply power_supply): powerSupply(power_supply) {}
+    void setup() override {powerSupply.setup();}
 };
 
 class PumpActuator: public TimedActuator {
@@ -187,7 +200,9 @@ Button button(buttonPin);
 
 AddTimeHandler* add_time_handler = new SerialAddTimeHandler();
 // AddTimeHandler* add_time_handler = new ButtonAddTimeHandler(button);
+PowerSupply powerSupply(power_supply_relay_pin);
 
+// TimedActuator* actuator = new PowerSupplyActuator(powerSupply);
 TimedActuator* actuator = new SerialActuator();
 // TimedActuator* actuator = new PumpActuator(2);
 
