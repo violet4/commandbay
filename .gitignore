@@ -10,3 +10,4 @@ plugins/*.py
 bot_memory.db
 kanboard.toml
 spotipy/
+arduino/output/
