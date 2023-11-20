@@ -1,10 +1,13 @@
+#ifndef PUMP
+#define PUMP
+
 #include <AFMotor.h>
 #include <string.h>
 #include "PowerSupply.h"
 
 static const uint8_t buttonPin = A0;
 const int speaker_pin = 9;
-const int power_supply_relay_pin = 52;
+const int ps_relay_pin = 52;
 
 
 // Frequencies of musical notes
@@ -200,7 +203,7 @@ Button button(buttonPin);
 
 AddTimeHandler* add_time_handler = new SerialAddTimeHandler();
 // AddTimeHandler* add_time_handler = new ButtonAddTimeHandler(button);
-PowerSupply powerSupply(power_supply_relay_pin);
+PowerSupply powerSupply(ps_relay_pin);
 
 // TimedActuator* actuator = new PowerSupplyActuator(powerSupply);
 TimedActuator* actuator = new SerialActuator();
@@ -222,3 +225,5 @@ void loop() {
     if (additional_seconds > 0)
         actuator->add_seconds(additional_seconds);
 }
+
+#endif

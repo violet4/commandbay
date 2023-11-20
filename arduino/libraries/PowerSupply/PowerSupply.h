@@ -12,7 +12,7 @@ private:
     int relayPin;
 
 public:
-    PowerSupply(int relay_pin): relayPin(relay_pin) {}
+    PowerSupply(int relay_pin);
     void on();
     void off();
     void setup();
