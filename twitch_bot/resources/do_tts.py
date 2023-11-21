@@ -1,8 +1,7 @@
-from collections import defaultdict
 from html import unescape
 from queue import Empty, Queue
 import time
-from typing import Dict, List
+from typing import Dict, List, Optional
 from threading import Thread
 
 from fastapi import Body
@@ -16,12 +15,21 @@ _tts_queue: Queue['Message'] = Queue()
 
 class Message(BaseModel):
     user: str
-    text: str
+    just_arrived: bool = False
+    text: Optional[str] = None
 
 
-def do_tts(user:str=Body(...), text:str=Body(...)):
-    message = unescape(text)
-    _tts_queue.put(Message(user=user, text=message))
+class MessagesContainer(BaseModel):
+    user: str
+    just_arrived: bool = False
+    texts: List[str] = []
+
+
+def do_tts(user:str=Body(...), text:Optional[str]=Body(default=None), first_chat:bool=Body(default=False)):
+    if text:
+        text = unescape(text)
+    message = Message(user=user, text=text, just_arrived=first_chat)
+    _tts_queue.put(message)
     return {'success': True}
 
 
@@ -30,7 +38,7 @@ def initialize_tts():
     thread.start()
 
 
-def structure_current_items(_tts_queue:Queue['Message'], current_items: Dict[str, List[str]]):
+def process_queue(_tts_queue:Queue['Message'], current_items: Dict[str, MessagesContainer]):
     had_new_items = False
     while True:
         try:
@@ -38,26 +46,43 @@ def structure_current_items(_tts_queue:Queue['Message'], current_items: Dict[str
             had_new_items = True
         except Empty:
             break
-        current_items[msg.user].append(msg.text)
+        if msg.user not in current_items:
+            current_items[msg.user] = MessagesContainer(user=msg.user)
+        message_container: MessagesContainer = current_items[msg.user]
+
+        if msg.just_arrived:
+            message_container.just_arrived = True
+        if msg.text:
+            message_container.texts.append(msg.text)
+
     return had_new_items
 
 
-def handle_current_items(current_items: Dict[str, List[str]]):
-    for user in list(current_items.keys()):
-        messages = current_items.pop(user)
-        tts.say(user)
-        tts.say('says')
-        for message in messages:
+def handle_current_items(current_message_containers: Dict[str, MessagesContainer]):
+    for username in list(current_message_containers.keys()):
+        message_container: MessagesContainer = current_message_containers.pop(username)
+        print("message_container:", message_container)
+
+        tts.say(username)
+        if message_container.just_arrived:
+            tts.say("just arrived")
+            if message_container.texts:
+                tts.say("and says")
+        else:
+            tts.say('says')
+
+        for message in message_container.texts:
             tts.say(message)
+
     tts.runAndWait()
 
 
 def handle_queue():
-    current_items: Dict[str, List[str]] = defaultdict(list)
+    current_message_containers: Dict[str, MessagesContainer] = dict()
     while True:
-        had_new_items = structure_current_items(_tts_queue, current_items)
+        had_new_items = process_queue(_tts_queue, current_message_containers)
 
         if had_new_items:
-            handle_current_items(current_items)
+            handle_current_items(current_message_containers)
         else:
             time.sleep(0.1)
