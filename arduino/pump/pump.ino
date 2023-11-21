@@ -1,6 +1,3 @@
-#ifndef PUMP
-#define PUMP
-
 #include <AFMotor.h>
 #include <string.h>
 #include "PowerSupply.h"
@@ -225,5 +222,3 @@ void loop() {
     if (additional_seconds > 0)
         actuator->add_seconds(additional_seconds);
 }
-
-#endif
