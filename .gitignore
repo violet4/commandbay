@@ -11,3 +11,4 @@ bot_memory.db
 kanboard.toml
 spotipy/
 arduino/output/
+frontend/elm-stuff/

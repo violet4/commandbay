@@ -1,5 +1,8 @@
 import logging
 
+from aiohttp import ClientSession
+from fastapi.responses import HTMLResponse
+
 from twitch_bot.resources.app import app
 from twitch_bot.resources.arduino_power import arduino_router
 from twitch_bot.resources.kanboard import kanboard_router
@@ -27,3 +30,10 @@ app.include_router(prefix='/spotify',  router=spotify_router)
 app.get("/random/random")(random_num)
 app.post("/log")(log_message)
 app.post("/tts")(tts)
+
+@app.get('/{path:path}')
+async def proxy_frontend(path: str):
+    async with ClientSession() as sess:
+        elm_dev_server = 'http://localhost:8000'
+        async with sess.get(f'{elm_dev_server}/{path}') as resp:
+            return HTMLResponse(await resp.text(), status_code=resp.status)
