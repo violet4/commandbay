@@ -9,7 +9,7 @@ from twitch_bot.resources.kanboard import kanboard_router
 from twitch_bot.resources.log_message import log_message
 from twitch_bot.resources.random_num import random_num
 from twitch_bot.resources.spotify import spotify_router, initialize_spotify
-from twitch_bot.resources.do_tts import do_tts as tts, initialize_tts
+from twitch_bot.resources.do_tts import post_tts_message, post_tts_message, initialize_tts
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -29,7 +29,7 @@ app.include_router(prefix='/spotify',  router=spotify_router)
 
 app.get("/random/random")(random_num)
 app.post("/log")(log_message)
-app.post("/tts")(tts)
+app.post("/tts")(post_tts_message)
 
 @app.get('/{path:path}')
 async def proxy_frontend(path: str):

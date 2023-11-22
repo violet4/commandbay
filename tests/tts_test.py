@@ -3,7 +3,7 @@ import time
 from fastapi.testclient import TestClient
 
 from twitch_bot.server import app
-from twitch_bot.resources.do_tts import Message
+from twitch_bot.resources.do_tts import ChatEventMessage
 from twitch_bot.core.tts import tts
 
 client = TestClient(app)
@@ -14,9 +14,9 @@ client = TestClient(app)
 # assert "error" in response.json()
 
 def test_read_item():
-    response = client.post("/tts", json=Message(user='user', text='message text').model_dump())
-    response = client.post("/tts", json=Message(user='user', text='message text').model_dump())
-    response = client.post("/tts", json=Message(user='user', text='message text').model_dump())
+    response = client.post("/tts", json=ChatEventMessage(user='user', text='message text').model_dump())
+    response = client.post("/tts", json=ChatEventMessage(user='user', text='message text').model_dump())
+    response = client.post("/tts", json=ChatEventMessage(user='user', text='message text').model_dump())
     time.sleep(1)
 
 # @pytest.mark.parametrize("item_id", [101, 102, 103, 104, 105])
