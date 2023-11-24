@@ -2,6 +2,7 @@ import logging
 
 from aiohttp import ClientSession
 from fastapi.responses import HTMLResponse
+from twitch_bot.models.users import create_user
 
 from twitch_bot.resources.app import app
 from twitch_bot.resources.arduino_power import arduino_router
@@ -30,6 +31,8 @@ app.include_router(prefix='/spotify',  router=spotify_router)
 app.get("/random/random")(random_num)
 app.post("/log")(log_message)
 app.post("/tts")(post_tts_message)
+app.post("/users/")(create_user)
+
 
 @app.get('/{path:path}')
 async def proxy_frontend(path: str):

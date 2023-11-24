@@ -12,3 +12,4 @@ kanboard.toml
 spotipy/
 arduino/output/
 frontend/elm-stuff/
+alembic.ini
