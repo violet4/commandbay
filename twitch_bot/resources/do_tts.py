@@ -5,11 +5,13 @@ from typing import Dict, List, Optional
 from threading import Thread
 import logging
 
-from fastapi import Body
+from fastapi import APIRouter, Body
 from pydantic import BaseModel
 
 from twitch_bot.core.tts import tts
 
+
+tts_router = APIRouter()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)
@@ -54,13 +56,14 @@ class Reward(HtmlBaseModel):
     rewardRedemptionId:str = ""
 
 
+@tts_router.post(r"")
 def post_tts_message(
     user:str=Body(...),
     text:Optional[str]=Body(default=None),
     first_chat:bool=Body(default=False),
     reward:Optional[Reward]=Body(default=None),
 ):
-    print("Reward:", reward)
+    # print("Reward:", reward)
 
     text = unescape(text) if text else text
     # reward.rewardName = unescape(reward.rewardName) if reward.rewardName else reward.rewardName
@@ -81,7 +84,7 @@ def initialize_tts():
     thread.start()
 
 
-# to database+UI
+#TODO:database+UI
 known_redemptions = {
     '588c13b9-cebf-4655-8d0a-9d51d9d38e4b': 'FIRST',
     'c0eca28e-4026-4d31-8361-dbf221f04383': 'Fun Fact',

@@ -3,6 +3,10 @@ import logging
 import datetime
 from typing import Union
 
+from sqlalchemy import create_engine, String, Integer, TypeDecorator
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
 import twitchio
 from twitchio.channel import Channel
 from twitchio.chatter import Chatter, PartialChatter
@@ -15,6 +19,25 @@ logger = logging.getLogger(__name__)
 
 
 conn = sqlite3.connect('bot_memory.db')
+
+engine = create_engine('sqlite:///db.sqlite3')
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
+#TODO:for now we're using typing.cast(Column[int], value), but maybe we can make sqlalchemy TypeDecorator work someday?
+# class StrColumn(TypeDecorator):
+#     impl = String
+#     def process_bind_param(self, value, _):
+#         return value
+#     def process_result_value(self, value, _):
+#         return value
+# class IntColumn(TypeDecorator):
+#     impl = Integer
+#     def process_bind_param(self, value, _):
+#         return value
+#     def process_result_value(self, value, _):
+#         return value
 
 
 def execute(sql):

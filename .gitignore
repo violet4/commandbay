@@ -13,3 +13,4 @@ spotipy/
 arduino/output/
 frontend/elm-stuff/
 alembic.ini
+db.sqlite3

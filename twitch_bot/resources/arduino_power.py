@@ -7,6 +7,7 @@ from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 
 from twitch_bot.core.arduino import Arduino
+from twitch_bot.resources.utils import ErrorResponseModel, SuccessResponseModel
 
 
 _arduino = Arduino()
@@ -29,14 +30,6 @@ class PowerStatusModel(BaseModel):
 
 class ArduinoError(BaseModel):
     message: str
-
-
-class ErrorResponseModel(BaseModel):
-    error: str
-    detail: str
-
-class SuccessResponseModel(BaseModel):
-    success: bool
 
 
 @arduino_router.get(
