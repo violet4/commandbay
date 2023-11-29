@@ -22,7 +22,9 @@ class UserInfoSchema(BaseModel):
 class UserResponseSchema(UserInfoSchema):
     user_id: int
     class Config:
-        orm_mode = True
+        # allows us to create UserResponseSchema objects
+        # from sqlalchemy row objects using
+        # UserResponseSchema.model_validate(db_user_row)
         from_attributes = True
 
 
@@ -48,7 +50,6 @@ class UserUpdateableSchema(BaseModel):
 
 @user_router.put("/{user_id}", response_model=UserResponseSchema)
 def update_user(user_id:int, updates:UserUpdateableSchema=Body(...)):
-    print("updates", updates)
     with SessionLocal() as sess:
         db_user = sess.query(User).where(User.user_id==user_id).one_or_none()
         if db_user is None:
@@ -58,7 +59,7 @@ def update_user(user_id:int, updates:UserUpdateableSchema=Body(...)):
             )
 
         if updates.name is not None:
-            db_user.name = cast(Column[str], updates.name)  #TODO:don't cast
+            db_user.name = cast(Column[str], updates.name)  #TODO:don't cast; sa.TypeDecorator?
 
         try:
             sess.commit()

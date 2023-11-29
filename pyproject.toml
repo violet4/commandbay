@@ -13,7 +13,7 @@ kanboard = "^1.1.5"
 spotipy = "^2.23.0"
 pyserial = "^3.5"
 pydantic = "^2.5.1"
-uvicorn = "^0.24.0.post1"
+uvicorn = {extras = ["standard"], version = "^0.24.0.post1"}
 fastapi = "^0.104.1"
 pytest = "^7.4.3"
 httpx = "^0.25.1"

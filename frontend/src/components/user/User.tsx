@@ -1,10 +1,10 @@
 import React from "react";
-import { User } from "../../models/User";
-import { useSaveCancelKeys } from "../../utils";
+import { UserModel } from "@/models/User";
+import { useSaveCancelKeys } from "@/utils";
 
 interface UserRowProps {
-    user: User;
-    onSave: (user: User) => void;
+    user: UserModel;
+    onSave: (user: UserModel) => void;
     onCancel: (id: number) => void;
 }
 

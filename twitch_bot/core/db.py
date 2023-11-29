@@ -3,7 +3,7 @@ import logging
 import datetime
 from typing import Union
 
-from sqlalchemy import create_engine, String, Integer, TypeDecorator
+from sqlalchemy import create_engine, String, Integer
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -26,6 +26,7 @@ Base = declarative_base()
 
 
 #TODO:for now we're using typing.cast(Column[int], value), but maybe we can make sqlalchemy TypeDecorator work someday?
+# from sqlalchemy import TypeDecorator
 # class StrColumn(TypeDecorator):
 #     impl = String
 #     def process_bind_param(self, value, _):

@@ -1,7 +1,8 @@
 import logging
+import asyncio
 
-from aiohttp import ClientSession
-from fastapi import APIRouter
+from aiohttp import ClientSession, ClientWebSocketResponse
+from fastapi import APIRouter, WebSocket
 from fastapi.responses import HTMLResponse
 
 from twitch_bot.resources.user import user_router
@@ -44,3 +45,29 @@ async def proxy_frontend(path: str):
                 status_code=resp.status,
                 media_type=resp.content_type,
             )
+
+
+@app.websocket('/{path:path}')
+async def websocket_proxy(websocket: WebSocket, path: str):
+    await websocket.accept()
+    async with ClientSession() as session:
+        async with session.ws_connect(f'ws://localhost:3000/{path}') as ws:
+            # Run two tasks concurrently: 
+            # One for receiving messages from the client and forwarding them to the server
+            # Another for receiving messages from the server and forwarding them to the client
+            consumer_task = asyncio.ensure_future(consumer_handler(websocket, ws))
+            producer_task = asyncio.ensure_future(producer_handler(websocket, ws))
+            done, pending = await asyncio.wait(
+                [consumer_task, producer_task], 
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in pending:
+                task.cancel()
+
+async def consumer_handler(client_ws: WebSocket, server_ws: ClientWebSocketResponse):
+    async for message in client_ws.iter_text():
+        await server_ws.send_str(message)
+
+async def producer_handler(client_ws: WebSocket, server_ws: ClientWebSocketResponse):
+    async for message in server_ws:
+        await client_ws.send_text(message.data)

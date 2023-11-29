@@ -1,6 +1,6 @@
-import { User } from "./User";
+import { UserModel } from "./User";
 
 export interface AppState {
-    users: User[];
+    users: UserModel[];
     error: string | null;
 }

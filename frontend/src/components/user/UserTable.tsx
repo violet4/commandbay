@@ -1,9 +1,9 @@
-import { User } from "../../models/User";
+import { UserModel } from "@/models/User";
 import { UserRow } from "./User";
 
 interface UsersTableProps {
-    users: User[];
-    onSave: (user: User) => void;
+    users: UserModel[];
+    onSave: (user: UserModel) => void;
     onCancel: (id: number) => void;
 }
 

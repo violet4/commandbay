@@ -12,6 +12,7 @@ from twitch_bot.resources.utils import ErrorResponseModel, SuccessResponseModel
 
 _arduino = Arduino()
 arduino_router = APIRouter()
+power_router = APIRouter()
 
 
 class PowerCommandEnum(str, Enum):
@@ -32,10 +33,10 @@ class ArduinoError(BaseModel):
     message: str
 
 
-@arduino_router.get(
-    '/power',
-    response_model=Union[PowerStatusModel, ErrorResponseModel],
-    responses={503: {"model": ErrorResponseModel}}
+@power_router.get(
+    '',
+    response_model=PowerStatusModel,
+    responses={503: {"model": ErrorResponseModel}},
 )
 async def get():
     try:
@@ -47,10 +48,10 @@ async def get():
     return PowerStatusModel(on=is_on)
 
 
-@arduino_router.put(
-    '/power',
-    response_model=Union[SuccessResponseModel, ErrorResponseModel],
-    responses={503: {"model": ErrorResponseModel}}
+@power_router.put(
+    '',
+    response_model=SuccessResponseModel,
+    responses={503: {"model": ErrorResponseModel}},
 )
 async def update_arduino_power(command:PowerCommandModel=Body(...)):
     try:
@@ -65,3 +66,6 @@ async def update_arduino_power(command:PowerCommandModel=Body(...)):
         raise HTTPException(503, detail=error.model_dump())
 
     return SuccessResponseModel(success=True)
+
+
+arduino_router.include_router(prefix="/power", router=power_router)
