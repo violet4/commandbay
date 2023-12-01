@@ -1,44 +1,82 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { UserModel } from "@/models/User";
-import { useSaveCancelKeys } from "@/utils";
+import { createKeyPressHandlers, json_headers } from "@/utils";
 
 interface UserRowProps {
     user: UserModel;
-    onSave: (user: UserModel) => void;
-    onCancel: (id: number) => void;
 }
 
-export const UserRow: React.FC<UserRowProps> = ({ user, onSave, onCancel }) => {
-    const [editName, setEditName] = React.useState(user.name);
-    const [savedName, setSavedName] = React.useState(user.name);
+type UpdatableFields = 'tts_nickname' | 'tts_included';
 
-    const saveAction = () => {
-        onSave({...user, name: editName});
-        setSavedName(editName);
-    };
-    const cancelAction = () => {
-        onCancel(user.user_id);
-        setEditName(savedName);
+function isUpdatableField(field: any): field is UpdatableFields {
+    return field === 'tts_nickname' || field === 'tts_included';
+}
+
+export const UserRow: React.FC<UserRowProps> = ({ user }) => {
+    const [modifiedUserData, setModifiedUserData] = React.useState(user);
+    const [savedUserData, setSavedUserData] = React.useState(user);
+
+    const onSave = (field: UpdatableFields) => () => {
+        if (!isUpdatableField(field)) return;
+
+        const new_data: Partial<UserModel> = {};
+        const stateUpdater = (data2: UserModel) => () => {
+            const updateObj: Partial<UserModel> = {};
+            updateObj[field] = data2[field] as any;
+            return {...modifiedUserData, ...updateObj};
+        };
+
+        new_data[field] = modifiedUserData[field] as any;
+
+        fetch(`/api/users/${savedUserData.user_id}`, {method: "PUT", headers: json_headers, body: JSON.stringify(new_data)})
+            .then(response => response.json())
+            .then((data: UserModel) => {
+                setSavedUserData(stateUpdater(data));
+                setModifiedUserData(stateUpdater(data));
+            });
     };
 
-    const saveCancelKeyHandlers = useSaveCancelKeys({ onEnter: saveAction, onEscape: cancelAction });
+    const onCancel = (field: UpdatableFields) => () => {
+        if (!isUpdatableField(field)) return;
+
+        const resetObj: Partial<UserModel> = {};
+        resetObj[field] = savedUserData[field] as any;
+        setModifiedUserData({...modifiedUserData, ...resetObj});
+    };
+    const saveNameChange = onSave("tts_nickname");
+    const cancelNameChange = onCancel('tts_nickname');
 
     return (
         <tr>
             <td>{user.user_id}</td>
+            <td>{user.name}</td>
             <td>
-                <input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    {...saveCancelKeyHandlers}
-                />
+                {/* tts included */}
+                <input type="checkbox" checked={savedUserData.tts_included} onChange={(e) => {
+                    e.target.disabled = true;
+                    fetch(`/api/users/${savedUserData.user_id}`, {method: "PUT", headers: json_headers, body: JSON.stringify({tts_included: e.target.checked})})
+                    .then(response => response.json())
+                    .then((data: UserModel) => {
+                        setSavedUserData(() => ({...savedUserData, tts_included: data.tts_included}));
+                        setModifiedUserData(() => ({...modifiedUserData, tts_included: data.tts_included}));
+                        e.target.disabled = false;
+                    });
+                }}/>
             </td>
-            {editName!==savedName &&
-                <td>
-                    <button onClick={saveAction}>Save</button>
-                    <button onClick={cancelAction}>Cancel</button>
-                </td>
-            }
+            <td>
+                {/* nickname */}
+                <input
+                    value={modifiedUserData.tts_nickname}
+                    onChange={(e) => setModifiedUserData(() => ({...modifiedUserData, tts_nickname: e.target.value}))}
+                    {...createKeyPressHandlers({Escape: cancelNameChange, Enter: saveNameChange})}
+                />
+                {modifiedUserData.tts_nickname!==savedUserData.tts_nickname &&
+                    <>
+                        <button onClick={saveNameChange}>Save</button>
+                        <button onClick={cancelNameChange}>Cancel</button>
+                    </>
+                }
+            </td>
         </tr>
     );
 };

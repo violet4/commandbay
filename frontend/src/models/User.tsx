@@ -5,4 +5,6 @@ export interface UserModel {
     originalName: string;
     platform: string;
     platform_user_id?: string;
+    tts_included: boolean;
+    tts_nickname?: string;
 }

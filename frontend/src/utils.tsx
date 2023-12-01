@@ -17,3 +17,19 @@ export function useSaveCancelKeys({ onEnter: positiveAction, onEscape: negativeA
 
     return { onKeyDown: handleKeyDown };
 }
+
+type KeyEvents = {
+    Escape?: () => void;
+    Enter?: () => void;
+};
+
+export const createKeyPressHandlers = (keyEvents: KeyEvents) => {
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        const fn = keyEvents[e.key as keyof KeyEvents];
+        if (fn !== undefined)
+            fn();
+    }, [keyEvents]);
+    return {onKeyDown: handleKeyDown};
+};
+
+export const json_headers = {'Content-Type': 'application/json'};

@@ -29,8 +29,8 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('user_id'),
     )
     with op.batch_alter_table('user') as bat:
-        bat.create_unique_constraint('user_unique_name_platform', ['name', 'platform'])
+        bat.create_unique_constraint('user_unique_platform_platform_user_id', ['platform', 'platform_user_id'])
 
 
 def downgrade() -> None:
-    op.drop_table('users')
+    op.drop_table('user')

@@ -3,28 +3,29 @@ import { UserRow } from "./User";
 
 interface UsersTableProps {
     users: UserModel[];
-    onSave: (user: UserModel) => void;
-    onCancel: (id: number) => void;
 }
 
-export const UsersTable: React.FC<UsersTableProps> = ({ users, onSave, onCancel }) => {
+export const UsersTable: React.FC<UsersTableProps> = ({ users }) => {
     if (users === undefined) {
         return (
             <div>No Users</div>
         );
     }
+    console.log("users:", users);
     return (
         <table>
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
+                    <th>TTS<br/>Included</th>
+                    <th>TTS<br/>Nickname</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
                 {users.map(user => (
-                    <UserRow key={user.user_id} user={user} onSave={onSave} onCancel={onCancel} />
+                    <UserRow key={user.user_id} user={user} />
                 ))}
             </tbody>
         </table>

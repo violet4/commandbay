@@ -17,6 +17,8 @@ class UserInfoSchema(BaseModel):
     name: str
     platform: str
     platform_user_id: Optional[str] = None
+    tts_included: bool
+    tts_nickname: Optional[str]
 
 
 class UserResponseSchema(UserInfoSchema):
@@ -28,24 +30,9 @@ class UserResponseSchema(UserInfoSchema):
         from_attributes = True
 
 
-@user_router.post("", response_model=UserResponseSchema)
-def create_user(user: UserInfoSchema):
-    with SessionLocal() as sess:
-        db_user = User(name=user.name, platform=user.platform)
-        sess.add(db_user)
-        try:
-            sess.commit()
-        except IntegrityError as e:
-            raise HTTPException(
-                status_code=409,
-                detail=f'{type(e).__name__}: {e.__cause__}'
-            )
-
-        return UserResponseSchema.model_validate(db_user)
-
-
 class UserUpdateableSchema(BaseModel):
-    name: Optional[str] = None
+    tts_nickname: Optional[str] = None
+    tts_included: Optional[bool] = None
 
 
 @user_router.put("/{user_id}", response_model=UserResponseSchema)
@@ -58,8 +45,10 @@ def update_user(user_id:int, updates:UserUpdateableSchema=Body(...)):
                 detail="user_id not found",
             )
 
-        if updates.name is not None:
-            db_user.name = cast(Column[str], updates.name)  #TODO:don't cast; sa.TypeDecorator?
+        if updates.tts_nickname is not None:
+            db_user.tts_nickname = cast(Column[str], updates.tts_nickname if updates.tts_nickname else None)  #TODO:don't cast; sa.TypeDecorator?
+        if updates.tts_included is not None:
+            db_user.tts_included = cast(Column[bool], updates.tts_included)
 
         try:
             sess.commit()

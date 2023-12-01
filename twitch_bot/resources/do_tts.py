@@ -9,6 +9,7 @@ from fastapi import APIRouter, Body
 from pydantic import BaseModel
 
 from twitch_bot.core.tts import tts
+from twitch_bot.models.user import User
 
 
 tts_router = APIRouter()
@@ -29,6 +30,8 @@ class HtmlBaseModel(BaseModel):
 
 class ChatEventMessage(HtmlBaseModel):
     user: str
+    platform_user_id: str
+    platform: str
     just_arrived: bool = False
     text: Optional[str] = None
     rewardId: Optional[str] = None
@@ -56,21 +59,23 @@ class Reward(HtmlBaseModel):
     rewardRedemptionId:str = ""
 
 
+
 @tts_router.post(r"")
 def post_tts_message(
     user:str=Body(...),
+    user_id:str=Body(...),
+    platform:str=Body(...),
     text:Optional[str]=Body(default=None),
     first_chat:bool=Body(default=False),
     reward:Optional[Reward]=Body(default=None),
 ):
-    # print("Reward:", reward)
-
     text = unescape(text) if text else text
     # reward.rewardName = unescape(reward.rewardName) if reward.rewardName else reward.rewardName
     # reward.rewardMessage = unescape(reward.rewardMessage) if reward.rewardMessage else reward.rewardMessage
     # reward.rewardDescription = unescape(reward.rewardDescription) if reward.rewardDescription else reward.rewardDescription
     message = ChatEventMessage(
-        user=user, text=text,
+        user=user, platform_user_id=user_id, platform=platform,
+        text=text,
         just_arrived=first_chat,
         rewardId=getattr(reward, 'rewardId', None),
         rewardName=getattr(reward, 'rewardName', None),
@@ -116,9 +121,12 @@ def process_current_queue_items(
         except Empty:
             break
         if msg.user not in user_msg_containers:
+            User.ensure_user_exists(name=msg.user, platform_user_id=msg.platform_user_id, platform=msg.platform)
             user_msg_containers[msg.user] = MessagesContainer(user=msg.user)
         message_container: MessagesContainer = user_msg_containers[msg.user]
 
+        # translate redemption names
+        #TODO:database-backed translation with UI for editing nicknames. "streamelements says bob redeemed drink water asterisk asterisk asterisk"
         if msg.rewardId is not None and msg.rewardName is not None:
             print("msg.rewardId:", msg.rewardId)
             if msg.rewardId in known_redemptions:
