@@ -1,3 +1,4 @@
+from html import unescape
 import json
 
 from fastapi import Request
@@ -18,3 +19,11 @@ class SuccessResponseModel(BaseModel):
 class ErrorResponseModel(BaseModel):
     error: str
     detail: str
+
+
+class HtmlBaseModel(BaseModel):
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            if isinstance(v, str):
+                kwargs[k] = unescape(v)
+        super().__init__(*args, **kwargs)

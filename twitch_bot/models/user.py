@@ -18,8 +18,10 @@ class User(Base):
     UniqueConstraint(platform, platform_user_id, name='user_unique_platform_platform_user_id')
 
     @classmethod
-    def ensure_user_exists(cls, name:str, platform_user_id:str, platform:str):
-        with SessionLocal() as sess:
+    def ensure_user_exists(cls, name:str, platform_user_id:str, platform:str) -> 'User':
+        # for more complex objects we use or joinedload subqueryload
+        # e.g. user = session.query(User).options(joinedload(User.foreign_relationship))...
+        with SessionLocal(expire_on_commit=False) as sess:
             existing_user = sess.query(User).where(
                 User.platform_user_id==platform_user_id,
                 User.platform==platform,
@@ -30,7 +32,7 @@ class User(Base):
                 if cast(str, existing_user.name) != name:
                     existing_user.name = name
                     sess.commit()
-                return
+                return existing_user
 
             new_user = cls(
                 name=name,
@@ -39,3 +41,6 @@ class User(Base):
             )
             sess.add(new_user)
             sess.commit()
+            return new_user
+            # # for some reason our caller is not able to access new_user.tts_nickname
+            # return sess.query(User).where(User.id==new_user.user_id).one_or_none()

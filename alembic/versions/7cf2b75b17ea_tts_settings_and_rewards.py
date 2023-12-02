@@ -29,7 +29,8 @@ def upgrade() -> None:
         )
     op.create_table(
         'reward',
-        sa.Column('reward_id', sa.Uuid, primary_key=True),
+        sa.Column('reward_id', sa.Integer, primary_key=True),
+        sa.Column('platform_reward_id', sa.Uuid, unique=True),
         sa.Column('name', sa.String, nullable=False),
         sa.Column('tts_name', sa.String, nullable=True, default=None),
     )

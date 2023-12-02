@@ -14,3 +14,8 @@ arduino/output/
 frontend/elm-stuff/
 alembic.ini
 db.sqlite3
+react/
+elm/
+.cache
+.vscode/
+commit.txt

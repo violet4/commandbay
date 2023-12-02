@@ -9,7 +9,9 @@ from fastapi import APIRouter, Body
 from pydantic import BaseModel
 
 from twitch_bot.core.tts import tts
+from twitch_bot.models.twitch.reward import Reward
 from twitch_bot.models.user import User
+from twitch_bot.resources.utils import HtmlBaseModel
 
 
 tts_router = APIRouter()
@@ -18,14 +20,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)
 
 _tts_queue: Queue['ChatEventMessage'] = Queue()
-
-
-class HtmlBaseModel(BaseModel):
-    def __init__(self, *args, **kwargs):
-        for k, v in kwargs.items():
-            if isinstance(v, str):
-                kwargs[k] = unescape(v)
-        super().__init__(*args, **kwargs)
 
 
 class ChatEventMessage(HtmlBaseModel):
@@ -50,7 +44,7 @@ class MessagesContainer(BaseModel):
     redemptions: List[str] = []
 
 
-class Reward(HtmlBaseModel):
+class PostReward(HtmlBaseModel):
     rewardName:str
     rewardId:str
     rewardCost:int
@@ -67,7 +61,7 @@ def post_tts_message(
     platform:str=Body(...),
     text:Optional[str]=Body(default=None),
     first_chat:bool=Body(default=False),
-    reward:Optional[Reward]=Body(default=None),
+    reward:Optional[PostReward]=Body(default=None),
 ):
     text = unescape(text) if text else text
     # reward.rewardName = unescape(reward.rewardName) if reward.rewardName else reward.rewardName
@@ -120,22 +114,21 @@ def process_current_queue_items(
             had_new_items = True
         except Empty:
             break
-        if msg.user not in user_msg_containers:
-            User.ensure_user_exists(name=msg.user, platform_user_id=msg.platform_user_id, platform=msg.platform)
-            user_msg_containers[msg.user] = MessagesContainer(user=msg.user)
-        message_container: MessagesContainer = user_msg_containers[msg.user]
+        user: User = User.ensure_user_exists(name=msg.user, platform_user_id=msg.platform_user_id, platform=msg.platform)
+        nickname = str(user.tts_nickname if user.tts_nickname is not None else user.name)
+        if nickname not in user_msg_containers:
+            if bool(user.tts_included):
+                user_msg_containers[nickname] = MessagesContainer(user=nickname)
+        message_container: Optional[MessagesContainer] = user_msg_containers.get(nickname, None)
+        if message_container is None:
+            continue
 
         # translate redemption names
         #TODO:database-backed translation with UI for editing nicknames. "streamelements says bob redeemed drink water asterisk asterisk asterisk"
         if msg.rewardId is not None and msg.rewardName is not None:
-            print("msg.rewardId:", msg.rewardId)
-            if msg.rewardId in known_redemptions:
-                redemption_text = known_redemptions[msg.rewardId]
-            else:
-                logger.warn("redemption unknown: %s %s", msg.rewardId, msg.rewardName)
-                redemption_text = msg.rewardName
-                redemption_text = chop_sound_alert_text(redemption_text)
-            message_container.redemptions.append(redemption_text)
+            reward: Reward = Reward.ensure_reward(msg.rewardId, msg.rewardName)
+            reward_name = str(reward.tts_name if reward.tts_name is not None else reward.name)
+            message_container.redemptions.append(reward_name)
 
         if msg.just_arrived:
             message_container.just_arrived = True

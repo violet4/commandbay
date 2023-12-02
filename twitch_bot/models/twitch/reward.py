@@ -1,17 +1,7 @@
+import uuid
+from sqlalchemy import Column, Integer, String, Uuid
 
-
-# do_tts.known_redemptions
-    # responses={503: {"model": ErrorResponseModel}},
-
-    #     error_response = ErrorResponseModel(error="couldn't communicate with arduino", detail=str(e))
-
-    #     raise HTTPException(503, detail=error_response.model_dump())
-
-
-from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint, Uuid
-from sqlalchemy.orm import relationship
-
-from twitch_bot.core.db import Base
+from twitch_bot.core.db import Base, SessionLocal
 
 
 class Reward(Base):
@@ -20,17 +10,22 @@ class Reward(Base):
     """
     #TODO:keep track of which stream(er) this belongs to
     __tablename__ = 'reward'
-    reward_id = Column(Uuid, primary_key=True)
+    reward_id = Column(Integer, primary_key=True)
+    platform_reward_id = Column(Uuid, unique=True)
     name = Column(String, nullable=False)
     tts_name = Column(String, nullable=True, default=None)
     # redemptions = relationship("Redemption", backref="reward")
 
-
-# class Redemption(Base):
-#     """
-#     a redemption is a user-generated instance of a reward
-#     """
-#     __tablename__ = 'redemption'
-#     redemption_id = Column(Integer, primary_key=True)
-#     reward_id = Column(Integer, ForeignKey('reward.reward_id'))
-#     user_id = Column(Integer, ForeignKey('user.user_id'))
+    @classmethod
+    def ensure_reward(cls, platform_reward_id: str, name: str):
+        with SessionLocal(expire_on_commit=False) as sess:
+            platform_reward_uuid = uuid.UUID(platform_reward_id)
+            reward: Reward = sess.query(cls).where(cls.platform_reward_id==platform_reward_uuid).one_or_none()
+            if reward is None:
+                reward = Reward(platform_reward_id=platform_reward_uuid, name=name)
+                sess.add(reward)
+                sess.commit()
+            if str(reward.name) != name:
+                reward.name = name
+                sess.commit()
+            return reward

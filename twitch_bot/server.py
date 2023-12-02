@@ -16,6 +16,7 @@ from twitch_bot.resources.arduino_power import arduino_router
 from twitch_bot.resources.kanboard import kanboard_router
 from twitch_bot.resources.log_message import log_router
 from twitch_bot.resources.random_num import random_router
+from twitch_bot.resources.rewards import rewards_router
 from twitch_bot.resources.spotify import spotify_router, initialize_spotify
 from twitch_bot.resources.do_tts import initialize_tts, tts_router
 
@@ -33,12 +34,21 @@ api_router.include_router(prefix="/users", router=user_router)
 api_router.include_router(prefix="/tts", router=tts_router)
 api_router.include_router(prefix="/random/random", router=random_router)
 api_router.include_router(prefix="/log", router=log_router)
+api_router.include_router(prefix="/rewards", router=rewards_router)
 
 app = FastAPI(
     openapi_url="/api/v1/openapi.json",
     docs_url='/api/v1/docs',
     version='0.1.0',
 )
+
+#TODO:don't hard-code violet.com.crt
+# @app.get("/static/violet.com.crt")
+# def get_ca_cert():
+#     with open("static/violet.com.crt", 'rb') as fr:
+#         return HTMLResponse(
+#             fr.read(), headers={'Content-Type': 'application/x-x509-ca-cert'},
+#         )
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(prefix="/api", router=api_router)
 
