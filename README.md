@@ -1,3 +1,5 @@
+# Command Bay
+
 Handy cross-platform Twitch bot capabilities exposed through a localhost HTTP server.
 
 # Getting Started
