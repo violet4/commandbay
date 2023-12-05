@@ -7,6 +7,9 @@ import pytest
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
+from .factories import UserFactory
+
+
 def server_has_started(process:subprocess.Popen):
     while True:
         output = b''
@@ -29,7 +32,18 @@ def start_nextjs_server():
 @pytest.fixture(scope="function")
 def browser():
     options = Options()
-    options.binary = '/usr/bin/firefox-bin'
+
+    # docker
+    firefox_binary = os.getenv('FIREFOX_BIN')
+    if firefox_binary:
+        options.add_argument('--headless')
+
+    options.binary = firefox_binary or '/usr/bin/firefox-bin'
     driver = webdriver.Firefox(options=options)
     yield driver
     driver.quit()
+
+
+@pytest.fixture
+def user_factory():
+    return UserFactory

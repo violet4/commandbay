@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Body
 from pydantic import BaseModel
 
-from twitch_bot.resources.utils import SuccessResponseModel
+from commandbay.resources.utils import SuccessResponseModel
 
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)

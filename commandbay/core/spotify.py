@@ -5,7 +5,7 @@ from typing import Optional
 from spotipy.client import Spotify as Spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
-from twitch_bot.core.utils import log_formatter
+from commandbay.core.utils import log_formatter
 
 logger = logging.getLogger(__name__)
 

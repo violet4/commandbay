@@ -10,7 +10,7 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
-from twitch_bot.models.user import User
+from commandbay.models.user import User
 
 
 # revision identifiers, used by Alembic.

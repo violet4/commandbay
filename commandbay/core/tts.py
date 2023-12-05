@@ -74,6 +74,7 @@ class TTS:
             import pyttsx3
             from pyttsx3.engine import Engine
             self.tts: Engine = pyttsx3.init()
+
             self.tts_disabled = False
             self.tts_enabled = True
 
@@ -83,7 +84,7 @@ class TTS:
             # mbrola
             self.setProperty('voice', 'mb-us1')
 
-        except ImportError:
+        except (ImportError, OSError):
             pyttsx3 = None
             self.tts_disabled = True
             self.tts_enabled = False

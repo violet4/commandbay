@@ -1,7 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from twitch_bot.core.db import Base
+from commandbay.core.db import Base
 
 
 class ChatMessage(Base):

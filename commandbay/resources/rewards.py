@@ -4,10 +4,10 @@ import uuid
 
 from fastapi import APIRouter, Body
 from sqlalchemy import Column
-from twitch_bot.core.db import SessionLocal
+from commandbay.core.db import SessionLocal
 
-from twitch_bot.models.twitch.reward import Reward
-from twitch_bot.resources.utils import HtmlBaseModel
+from commandbay.models.twitch.reward import Reward
+from commandbay.resources.utils import HtmlBaseModel
 
 
 rewards_router = APIRouter()

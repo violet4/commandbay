@@ -6,8 +6,8 @@ from fastapi import APIRouter, Body
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 
-from twitch_bot.core.arduino import Arduino
-from twitch_bot.resources.utils import ErrorResponseModel, SuccessResponseModel
+from commandbay.core.arduino import Arduino
+from commandbay.resources.utils import ErrorResponseModel, SuccessResponseModel
 
 
 _arduino = Arduino()

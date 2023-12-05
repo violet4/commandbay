@@ -1,0 +1,13 @@
+# Build from the dependencies stage of the base Dockerfile
+FROM commandbay-base as test
+
+# Install test dependencies
+RUN poetry install --no-root --with dev
+
+# Copy application code
+COPY . /app
+COPY env.txt /app/
+# COPY tests /app/
+
+# Set command to run tests
+CMD ["pytest", "--cov=commandbay", "--cov-report", "html", "tests/"]

@@ -5,9 +5,9 @@ from pydantic import BaseModel
 from sqlalchemy import Column
 from sqlalchemy.exc import IntegrityError
 
-from twitch_bot.core.db import SessionLocal
-from twitch_bot.models.user import User
-from twitch_bot.resources.utils import ErrorResponseModel
+from commandbay.core.db import SessionLocal
+from commandbay.models.user import User
+from commandbay.resources.utils import ErrorResponseModel
 
 
 user_router = APIRouter()
@@ -23,11 +23,12 @@ class UserInfoSchema(BaseModel):
 
 class UserResponseSchema(UserInfoSchema):
     user_id: int
-    class Config:
+    model_config = {
         # allows us to create UserResponseSchema objects
         # from sqlalchemy row objects using
         # UserResponseSchema.model_validate(db_user_row)
-        from_attributes = True
+        'from_attributes': True,
+    }
 
 
 class UserUpdateableSchema(BaseModel):

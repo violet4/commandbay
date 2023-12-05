@@ -1,0 +1,41 @@
+# Base Image
+FROM python:3.11-slim as base
+WORKDIR /app
+
+# Install python Poetry
+RUN apt-get update \
+    && apt-get install -y curl \
+    && curl -sSL https://install.python-poetry.org | python3 - \
+    # Cleanup
+    && apt-get purge -y --auto-remove curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+ENV PATH="${PATH}:/root/.local/bin"
+
+# Install Node.js
+RUN apt-get update \
+    && apt-get install -y curl xz-utils \
+    && curl -fsSL https://nodejs.org/dist/v20.10.0/node-v20.10.0-linux-x64.tar.xz | tar -xJ -C /usr/local --strip-components=1 \
+    && npm install -g npm@latest \
+    && apt-get purge -y --auto-remove curl xz-utils \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Firefox and dependencies for Selenium
+RUN apt-get update \
+    && apt-get install -y firefox-esr \
+    && rm -rf /var/lib/apt/lists/*
+ENV FIREFOX_BIN="/usr/bin/firefox-esr"
+
+# install python dependencies
+COPY pyproject.toml poetry.lock* /app/
+RUN poetry config virtualenvs.create false \
+    && poetry install --no-root --without dev,docs
+
+# install frontend dependencies
+COPY frontend/package*.json /app/frontend/
+WORKDIR /app/frontend
+RUN npm install \
+    # Cleanup
+    && npm cache clean --force
+WORKDIR /app

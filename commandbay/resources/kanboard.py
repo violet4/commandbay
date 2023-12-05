@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Body
 from pydantic import BaseModel
 
-from twitch_bot.core.kanboard import Kanboard
+from commandbay.core.kanboard import Kanboard
 
 
 kanboard_router = APIRouter()

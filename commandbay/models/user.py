@@ -1,7 +1,7 @@
 from typing import cast
 from sqlalchemy import VARCHAR, Boolean, Column, Integer, String, UniqueConstraint
 
-from twitch_bot.core.db import Base, SessionLocal
+from commandbay.core.db import Base, SessionLocal
 
 
 class User(Base):

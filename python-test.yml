@@ -1,0 +1,19 @@
+# github actions
+name: Python Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build Docker image
+      run: docker build -t commandbay .
+
+    - name: Install test dependencies in Docker
+      run: docker run commandbay poetry install --with dev --no-root
+    - name: Run tests in Docker
+      run: docker run commandbay poetry run pytest --cov=commandbay tests/

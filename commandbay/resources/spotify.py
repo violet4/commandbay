@@ -4,8 +4,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Body
 
-from twitch_bot.core.utils import load_environment
-from twitch_bot.core.spotify import Spotify
+from commandbay.core.utils import load_environment
+from commandbay.core.spotify import Spotify
 
 
 class SpotifyMethod(Enum):

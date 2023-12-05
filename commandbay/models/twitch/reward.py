@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import Column, Integer, String, Uuid
 
-from twitch_bot.core.db import Base, SessionLocal
+from commandbay.core.db import Base, SessionLocal
 
 
 class Reward(Base):

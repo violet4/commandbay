@@ -1,0 +1,11 @@
+stages:
+  - test
+
+test:
+  image: docker:stable
+  services:
+    - docker:dind
+  script:
+    - docker build -t commandbay .
+    - docker run commandbay poetry install --with dev --no-root
+    - docker run commandbay poetry run pytest --cov=commandbay tests/

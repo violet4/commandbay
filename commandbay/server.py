@@ -11,14 +11,14 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi import docs
 
-from twitch_bot.resources.user import user_router
-from twitch_bot.resources.arduino_power import arduino_router
-from twitch_bot.resources.kanboard import kanboard_router
-from twitch_bot.resources.log_message import log_router
-from twitch_bot.resources.random_num import random_router
-from twitch_bot.resources.rewards import rewards_router
-from twitch_bot.resources.spotify import spotify_router, initialize_spotify
-from twitch_bot.resources.do_tts import initialize_tts, tts_router
+from commandbay.resources.user import user_router
+from commandbay.resources.arduino_power import arduino_router
+from commandbay.resources.kanboard import kanboard_router
+from commandbay.resources.log_message import log_router
+from commandbay.resources.random_num import random_router
+from commandbay.resources.rewards import rewards_router
+from commandbay.resources.spotify import spotify_router, initialize_spotify
+from commandbay.resources.do_tts import initialize_tts, tts_router
 
 
 logging.basicConfig(level=logging.DEBUG)

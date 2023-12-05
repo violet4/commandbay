@@ -8,10 +8,10 @@ import logging
 from fastapi import APIRouter, Body
 from pydantic import BaseModel
 
-from twitch_bot.core.tts import tts
-from twitch_bot.models.twitch.reward import Reward
-from twitch_bot.models.user import User
-from twitch_bot.resources.utils import HtmlBaseModel
+from commandbay.core.tts import tts
+from commandbay.models.twitch.reward import Reward
+from commandbay.models.user import User
+from commandbay.resources.utils import HtmlBaseModel
 
 
 tts_router = APIRouter()

@@ -1,0 +1,11 @@
+# Build from the dependencies stage of the base Dockerfile
+FROM commandbay-base:dependencies as production
+
+# Install only production dependencies
+RUN poetry install --no-root --without dev --without docs
+
+# Copy application code
+COPY . /app
+
+# Production start command
+CMD ["python", "start_server.py"]

@@ -3,9 +3,9 @@ import time
 from fastapi.testclient import TestClient
 import uuid
 
-from twitch_bot.server import app
-from twitch_bot.resources.do_tts import ChatEventMessage
-from twitch_bot.core.tts import tts
+from commandbay.server import app
+from commandbay.resources.do_tts import ChatEventMessage
+from commandbay.core.tts import tts
 
 client = TestClient(app)
 

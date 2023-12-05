@@ -10,4 +10,5 @@ Handy cross-platform Twitch bot capabilities exposed through a localhost HTTP se
 
 Run the tests:
 
-* `poetry run pytest --cov=twitch_bot tests/`
+* `poetry run pytest --cov=commandbay tests/`
+* `poetry run coverage html`
