@@ -93,7 +93,7 @@ applications.get_swagger_ui_html = swagger_monkey_patch(docs.get_swagger_ui_html
 @app.get('/{path:path}')
 async def proxy_frontend(path: str):
     async with ClientSession() as sess:
-        frontend_dev_server = 'http://localhost:3000'
+        frontend_dev_server = 'http://localhost:7322'
         full_path = f'{frontend_dev_server}/{path}'
         async with sess.get(full_path) as resp:
             return HTMLResponse(
@@ -107,7 +107,7 @@ async def proxy_frontend(path: str):
 async def websocket_proxy(websocket: WebSocket, path: str):
     await websocket.accept()
     async with ClientSession() as session:
-        async with session.ws_connect(f'ws://localhost:3000/{path}') as ws:
+        async with session.ws_connect(f'ws://localhost:7322/{path}') as ws:
             # Run two tasks concurrently: 
             # One for receiving messages from the client and forwarding them to the server
             # Another for receiving messages from the server and forwarding them to the client
