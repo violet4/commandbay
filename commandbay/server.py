@@ -41,6 +41,7 @@ app = FastAPI(
     openapi_url="/api/v0/openapi.json",
     docs_url='/api/v0/docs',
     version='0.0.1',
+    title="CommandBay",
 )
 
 #TODO:don't hard-code violet.com.crt
@@ -75,6 +76,8 @@ if env.frontend.static_frontend:
 # serve the frontend development nextjs server
 # run with `npm run dev`
 else:
+    app.mount("/docs", StaticFiles(directory=os.path.join('docs', 'build', 'html')), name="docs")
+
     @app.get('/{path:path}')
     async def proxy_frontend(path: str):
         async with ClientSession() as sess:

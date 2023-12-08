@@ -75,6 +75,7 @@ def main():
 
     pargs, unknown = parse_args()
 
+    from commandbay.server import app
     arguments = [
         "commandbay.server:app",
         "--host", pargs.host,
@@ -84,6 +85,14 @@ def main():
         os.environ['PRODUCTION'] = '0'
         mode = 'development'
         arguments.append("--reload")
+        def start_frontend_server():
+            from threading import Thread
+            def frontend_server_thread():
+                import subprocess
+                subprocess.run('cd frontend; npm run dev', shell=True)
+            thread = Thread(target=frontend_server_thread, daemon=True)
+            thread.start()
+        start_frontend_server()
     else:
         mode = 'production'
 

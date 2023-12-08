@@ -33,7 +33,8 @@ frontend_docs:
 	cp -r docs/build/html/* frontend/out/docs
 
 
-
+dev:
+	python start_server.py --dev
 
 .PHONY: build
 build: docs frontend frontend_docs
