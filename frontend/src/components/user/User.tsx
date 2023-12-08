@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { UserModel } from "@/models/User";
-import { createKeyPressHandlers, json_headers } from "@/utils";
+import { useKeyPressHandlers, json_headers } from "@/utils";
 
 interface UserRowProps {
     user: UserModel;
@@ -45,6 +45,7 @@ export const UserRow: React.FC<UserRowProps> = ({ user }) => {
     };
     const saveNameChange = onSave("tts_nickname");
     const cancelNameChange = onCancel('tts_nickname');
+    const keyPressHandlers = useKeyPressHandlers({ Escape: cancelNameChange, Enter: saveNameChange });
 
     return (
         <tr>
@@ -66,9 +67,9 @@ export const UserRow: React.FC<UserRowProps> = ({ user }) => {
             <td>
                 {/* nickname */}
                 <input
-                    value={modifiedUserData.tts_nickname}
+                    value={modifiedUserData.tts_nickname||''}
                     onChange={(e) => setModifiedUserData(() => ({...modifiedUserData, tts_nickname: e.target.value}))}
-                    {...createKeyPressHandlers({Escape: cancelNameChange, Enter: saveNameChange})}
+                    {...keyPressHandlers}
                 />
                 {modifiedUserData.tts_nickname!==savedUserData.tts_nickname &&
                     <>

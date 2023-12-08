@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import useSWR from "swr";
 
-import { createKeyPressHandlers, json_headers } from "@/utils";
+import { useKeyPressHandlers, json_headers } from "@/utils";
 import { RewardModel } from "@/models/Reward";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -14,7 +14,7 @@ export default function Rewards() {
     return <RewardsTable rewards={rewards} />;
 
 }
- 
+
 interface RewardsTableProps {
     rewards: RewardModel[];
 }
@@ -87,6 +87,7 @@ export const RewardRow: React.FC<RewardRowProps> = ({ reward }) => {
     };
     const saveNameChange = onSave("tts_name");
     const cancelNameChange = onCancel('tts_name');
+    const keyPressHandlers = useKeyPressHandlers({Escape: cancelNameChange, Enter: saveNameChange});
 
     return (
         <tr>
@@ -97,7 +98,7 @@ export const RewardRow: React.FC<RewardRowProps> = ({ reward }) => {
                 <input
                     value={modifiedRewardData?.tts_name||''}
                     onChange={(e) => setModifiedRewardData(() => ({...modifiedRewardData, tts_name: e.target.value}))}
-                    {...createKeyPressHandlers({Escape: cancelNameChange, Enter: saveNameChange})}
+                    {...keyPressHandlers}
                 />
                 {modifiedRewardData.tts_name!==savedRewardData.tts_name &&
                     <>

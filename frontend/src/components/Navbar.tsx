@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import styles from '@/styles/navbar.module.css'
+// import styles from '@/styles/navbar.module.css'
 import React, { useState, ReactNode } from 'react';
 
 interface NodeProps {
@@ -36,11 +36,10 @@ export default function Navbar() {
                 <NavNode title="Home"     href="/" />
                 <NavNode title="Users"    href="/users" />
                 <NavNode title="Rewards"  href="/rewards" />
-                <NavNode title="API Docs" href="/api/v1/docs" />
                 <NavNode title="About"    href="/about" />
-                <NavNode title="Dropdown">
-                    <NavNode title="1"/>
-                    <NavNode title="2"/>
+                <NavNode title="Documentation">
+                    <NavNode title="Sphinx" href="/docs/index.html"/>
+                    <NavNode title="API" href="/api/v0/docs"/>
                 </NavNode>
             </ul>
         </nav>

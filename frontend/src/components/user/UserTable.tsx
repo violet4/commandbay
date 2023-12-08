@@ -11,7 +11,6 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users }) => {
             <div>No Users</div>
         );
     }
-    console.log("users:", users);
     return (
         <table>
             <thead>

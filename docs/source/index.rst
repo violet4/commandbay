@@ -1,6 +1,18 @@
 Welcome to CommandBay's documentation!
 ======================================
 
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+* `Return to CommandBay App </>`_
+
+
+CommandBay
+==========
+
 .. automodule:: commandbay
    :members:
    :undoc-members:
@@ -12,11 +24,3 @@ Welcome to CommandBay's documentation!
    modules
 
 .. openapi:: openapi.json
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
