@@ -6,7 +6,8 @@ authors = ["Violet Eldridge <github@violet-mica.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+# would use ^3.11 but pyinstaller wants a specific range
+python = ">=3.11,<3.13"
 twitchio = "^2.8.2"
 pyttsx3 = "^2.90"
 kanboard = "^1.1.5"
@@ -32,6 +33,10 @@ selenium = "^4.15.2"
 sphinx = "^7.2.6"
 poetry-plugin-export = "^1.6.0"
 sphinxcontrib-openapi = "^0.8.3"
+
+
+[tool.poetry.group.build.dependencies]
+pyinstaller = "^6.2.0"
 
 [build-system]
 requires = ["poetry-core"]
