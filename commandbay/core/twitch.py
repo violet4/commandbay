@@ -48,6 +48,10 @@ from commandbay.core.greetings import (
 from commandbay.core.spotify import Spotify
 from commandbay.core.kanboard import Kanboard
 
+__all__ = (
+    
+)
+
 MISSING_AUTHOR_NAME = 'missing_author_name'
 NO_MESSAGE_CONTENT = 'no_message_content'
 

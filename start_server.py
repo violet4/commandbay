@@ -3,6 +3,11 @@ import subprocess
 import sys
 import argparse
 
+try:
+    from uvicorn.main import main as uvicorn_main
+except ImportError:
+    uvicorn_main = None
+
 
 class ServerNamespace(argparse.Namespace):
     "Default to production=True so we don't accidentally ship a prod release running dev mode"
@@ -29,7 +34,7 @@ def parse_args():
     return pargs, unknown
 
 
-def get_poetry_python_path() -> str:
+def get_poetry_exe_path(exe_name:str) -> str:
     """
     Returns the path of the Python interpreter managed by Poetry.
 
@@ -43,7 +48,7 @@ def get_poetry_python_path() -> str:
         subprocess.CalledProcessError: If the 'poetry env info -p' command fails.
     """
     try:
-        path = subprocess.check_output(["poetry", "run", "which", "python"], text=True).strip()
+        path = subprocess.check_output(["poetry", "run", "which", exe_name], text=True).strip()
         return path
     except subprocess.CalledProcessError as e:
         print(f"Error occurred when trying to find poetry python executable path: {e}")
@@ -59,18 +64,18 @@ def main():
     along any arguments it received. It checks to prevent recursive execution
     by ensuring that it's not already running in the Poetry environment.
     """
-    poetry_python_path = get_poetry_python_path()
+    poetry_python_path = get_poetry_exe_path('python')
+    uvicorn_path = get_poetry_exe_path('uvicorn')
     main_script_path = __file__
 
     # Ensure this script is not recursively calling itself
-    if sys.executable != poetry_python_path:
+    if sys.executable != poetry_python_path or uvicorn_main is None:
         # Pass all the arguments given to the original script to the main script
         os.execl(poetry_python_path, poetry_python_path, main_script_path, *sys.argv[1:])
 
     pargs, unknown = parse_args()
 
-    command = [
-        poetry_python_path, "-m", "uvicorn",
+    arguments = [
         "commandbay.server:app",
         "--host", pargs.host,
         "--port", pargs.port,
@@ -78,18 +83,18 @@ def main():
     if pargs.dev:
         os.environ['PRODUCTION'] = '0'
         mode = 'development'
-        command.append("--reload")
+        arguments.append("--reload")
     else:
         mode = 'production'
 
     if unknown:
         if unknown[0] == '--':
             unknown = unknown[1:]
-        command.extend(unknown)
+        arguments.extend(unknown)
 
-    print(f"Running {mode} server:", command)
-    subprocess.run(command)
-    return 0
+    sys.argv = [uvicorn_path]+arguments
+    print(f"Running {mode} server:", sys.argv)
+    sys.exit(uvicorn_main())
 
 
 if __name__ == '__main__':

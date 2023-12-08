@@ -34,5 +34,14 @@ frontend_docs:
 
 
 
+
 .PHONY: build
 build: docs frontend frontend_docs
+
+#TODO:windows
+#TODO:macos?
+
+linux: build
+	poetry run pyinstaller --onefile --name commandbay --add-data start_server.py:. -y start_server.py
+
+all: linux

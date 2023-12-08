@@ -50,7 +50,8 @@ app = FastAPI(
 #         return HTMLResponse(
 #             fr.read(), headers={'Content-Type': 'application/x-x509-ca-cert'},
 #         )
-app.mount("/static", StaticFiles(directory="static"), name="static")
+static_dir = "static" if os.path.exists('static') else os.path.join('..', 'static')
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 app.include_router(prefix="/api", router=api_router)
 
 # serve the now-static "compiled" frontend code
@@ -68,6 +69,7 @@ if env.frontend.static_frontend:
             return FileResponse(file_path)
         return FileResponse(f'{static_frontend_files_path}/index.html')
 
+    static_frontend_files_path = static_frontend_files_path if os.path.exists(static_frontend_files_path) else os.path.join('..', static_frontend_files_path)
     app.mount("/", StaticFiles(directory=static_frontend_files_path), name="frontend")
 
 # serve the frontend development nextjs server
