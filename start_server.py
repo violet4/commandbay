@@ -3,10 +3,14 @@ import subprocess
 import sys
 import argparse
 
+
+
 try:
     from uvicorn.main import main as uvicorn_main
+    from alembic.config import main as alembic_main
 except ImportError:
     uvicorn_main = None
+    alembic_main = None
 
 
 class ServerNamespace(argparse.Namespace):
@@ -55,6 +59,22 @@ def get_poetry_exe_path(exe_name:str) -> str:
         sys.exit(1)
 
 
+def ensure_database_updated():
+    if alembic_main is None:
+        return
+    print("alembic upgrade head")
+    alembic_main(argv=['upgrade', 'head'])
+
+
+def start_frontend_thread():
+    from threading import Thread
+    def frontend_server_thread():
+        import subprocess
+        subprocess.run('cd frontend; npm run dev', shell=True)
+    thread = Thread(target=frontend_server_thread, daemon=True)
+    thread.start()
+
+
 def main():
     """
     Main function to execute the script.
@@ -76,7 +96,7 @@ def main():
     pargs, unknown = parse_args()
 
     from commandbay.server import app
-    arguments = [
+    uvicorn_arguments = [
         "commandbay.server:app",
         "--host", pargs.host,
         "--port", pargs.port,
@@ -84,24 +104,19 @@ def main():
     if pargs.dev:
         os.environ['PRODUCTION'] = '0'
         mode = 'development'
-        arguments.append("--reload")
-        def start_frontend_server():
-            from threading import Thread
-            def frontend_server_thread():
-                import subprocess
-                subprocess.run('cd frontend; npm run dev', shell=True)
-            thread = Thread(target=frontend_server_thread, daemon=True)
-            thread.start()
-        start_frontend_server()
+        uvicorn_arguments.append("--reload")
     else:
         mode = 'production'
 
     if unknown:
         if unknown[0] == '--':
             unknown = unknown[1:]
-        arguments.extend(unknown)
+        uvicorn_arguments.extend(unknown)
 
-    sys.argv = [uvicorn_path]+arguments
+    ensure_database_updated()
+    if pargs.dev:
+        start_frontend_thread()
+    sys.argv = [uvicorn_path]+uvicorn_arguments
     print(f"Running {mode} server:", sys.argv)
     sys.exit(uvicorn_main())
 
