@@ -1,9 +1,10 @@
 from html import unescape
 from queue import Empty, Queue
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Annotated
 from threading import Thread
 import logging
+import uuid
 
 from fastapi import APIRouter, Body
 from pydantic import BaseModel
@@ -46,32 +47,33 @@ class MessagesContainer(BaseModel):
 
 class PostReward(HtmlBaseModel):
     rewardName:str
-    rewardId:str
+    rewardId:uuid.UUID
     rewardCost:int
     rewardMessage:str = ""  # This is the user's associated text-based message
     rewardDescription:str = ""
     rewardRedemptionId:str = ""
 
 
-
 @tts_router.post(r"")
 def post_tts_message(
-    user:str=Body(...),
-    user_id:str=Body(...),
+    user:Annotated[str, Body(...)],
+    user_id:uuid.UUID=Body(...),
     platform:str=Body(...),
     text:Optional[str]=Body(default=None),
-    first_chat:bool=Body(default=False),
+    first_chat:Optional[bool]=Body(default=False),
     reward:Optional[PostReward]=Body(default=None),
 ):
     text = unescape(text) if text else text
     # reward.rewardName = unescape(reward.rewardName) if reward.rewardName else reward.rewardName
     # reward.rewardMessage = unescape(reward.rewardMessage) if reward.rewardMessage else reward.rewardMessage
     # reward.rewardDescription = unescape(reward.rewardDescription) if reward.rewardDescription else reward.rewardDescription
+    rewardId = getattr(reward, 'rewardId', None)
+
     message = ChatEventMessage(
-        user=user, platform_user_id=user_id, platform=platform,
+        user=user, platform_user_id=str(user_id), platform=platform,
         text=text,
-        just_arrived=first_chat,
-        rewardId=getattr(reward, 'rewardId', None),
+        just_arrived=first_chat or False,
+        rewardId=str(rewardId) if rewardId else None,
         rewardName=getattr(reward, 'rewardName', None),
     )
     _tts_queue.put(message)
@@ -81,18 +83,6 @@ def post_tts_message(
 def initialize_tts():
     thread = Thread(target=handle_queue, daemon=True)
     thread.start()
-
-
-#TODO:database+UI
-known_redemptions = {
-    '588c13b9-cebf-4655-8d0a-9d51d9d38e4b': 'FIRST',
-    'c0eca28e-4026-4d31-8361-dbf221f04383': 'Fun Fact',
-    'c4f1d1b9-91e4-4801-a7c2-67994036a0a0': 'Stretch',
-    'a73bcf34-3904-4bdc-95b4-82f25dcb9309': 'Ask me anything',
-    'ee4df394-b0a6-418b-8c8c-7997cf585e44': 'Drink water',  # sound
-    '7746a20a-7850-4fe0-9caf-53f6940b2539': 'Hello Darkness',  # sound
-    '3bf2811c-06f3-4ccf-9f1a-66deb884fcb1': 'Name a Pawn',  # Rimworld
-}
 
 
 sound_alert_prefix = 'Sound Alert: '
