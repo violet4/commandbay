@@ -2,15 +2,42 @@ import os
 import subprocess
 import sys
 import argparse
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-
+#TODO:log error messages anywhere these imports are unexpectedly None
 try:
     from uvicorn.main import main as uvicorn_main
-    from alembic.config import main as alembic_main
-except ImportError:
+except ImportError as e:
+    logger.error("failed to import uvicorn.main.main: %s", e)
     uvicorn_main = None
+try:
+    from alembic.config import Config
+except ImportError as e:
+    logger.error("failed to import alembic.config.Config: %s", e)
+    Config = None
+try:
+    from alembic import command
+except ImportError as e:
+    logger.error("failed to import alembic.command: %s", e)
+    command = None
+try:
+    from alembic.config import main as alembic_main
+except ImportError as e:
+    logger.error("failed to import alembic.config.main: %s", e)
     alembic_main = None
+try:
+    from commandbay.core.db import engine, Base
+except ImportError as e:
+    logger.error("failed to import engine and/or Base from commandbay.core.db: %s", e)
+    engine = Base = None
+try:
+    from commandbay.utils.environ import environment as env
+except ImportError as e:
+    logger.error("failed to import commandbay.utils.environ.environment: %s", e)
+    env = None
 
 
 class ServerNamespace(argparse.Namespace):
@@ -28,8 +55,8 @@ def parse_args():
     command-line-specified arguments
     :rtype: ServerNamespace
     """
-    from commandbay.utils.environ import environment as env
-
+    if env is None:
+        return (None, None)
     cl_args = argparse.ArgumentParser()
     cl_args.add_argument('--dev', default=False, action='store_true')
     cl_args.add_argument('--host', default=env.webserver.bind_host)
@@ -60,11 +87,20 @@ def get_poetry_exe_path(exe_name:str) -> str:
 
 
 def ensure_database_updated():
-    if alembic_main is None:
+    print("ensure_database_updated")
+    if (
+        alembic_main is None
+        or engine is None
+        or env is None
+        or Base is None
+        or Config is None
+        or command is None
+    ):
         return
-    print("alembic upgrade head")
-    alembic_main(argv=['upgrade', 'head'])
-
+    # if not os.path.exists(env.sqlite_file_path):
+    #     Base.metadata.create_all(engine)
+    config = Config('alembic.ini')
+    command.upgrade(config, 'head')
 
 def start_frontend_thread():
     from threading import Thread
@@ -94,8 +130,10 @@ def main():
         os.execl(poetry_python_path, poetry_python_path, main_script_path, *sys.argv[1:])
 
     pargs, unknown = parse_args()
+    if pargs is None:
+        return
 
-    from commandbay.server import app
+    # from commandbay.server import app
     uvicorn_arguments = [
         "commandbay.server:app",
         "--host", pargs.host,

@@ -33,7 +33,7 @@ api_router.include_router(prefix="/kanboard", router=kanboard_router)
 api_router.include_router(prefix='/spotify',  router=spotify_router)
 api_router.include_router(prefix="/users", router=user_router)
 api_router.include_router(prefix="/tts", router=tts_router)
-api_router.include_router(prefix="/random/random", router=random_router)
+api_router.include_router(prefix="/random", router=random_router)
 api_router.include_router(prefix="/log", router=log_router)
 api_router.include_router(prefix="/rewards", router=rewards_router)
 

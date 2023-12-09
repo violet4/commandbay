@@ -27,6 +27,9 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+from commandbay.utils.environ import environment as env
+from commandbay.core.db import construct_alembic_config
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -40,7 +43,8 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    # url = config.get_main_option("sqlalchemy.url")
+    url = env.sqlite_db_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -59,8 +63,9 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    config_ini_section = construct_alembic_config()
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config_ini_section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

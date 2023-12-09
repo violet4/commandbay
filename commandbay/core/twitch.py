@@ -36,10 +36,10 @@ from commandbay.core.utils import (
     log_format, log_formatter, get_oauth_token,
 )
 from commandbay.cli import parse_args
-from commandbay.core.db import (
-    get_time_user_seen_last, update_user_seen_last,
-    insert_history, update_user_exited_last,
-)
+# from commandbay.core.db import (
+#     get_time_user_seen_last, update_user_seen_last,
+#     insert_history, update_user_exited_last,
+# )
 from commandbay.core.tts import tts
 from commandbay.core.greetings import (
     re_greetings, greetings, greet_starts,
@@ -232,7 +232,7 @@ class Bot(TwitchBot):
         author: Union["Chatter", "PartialChatter"] = msg.author
         logger.info("chat message: %s %s", author, message_content)
         if isinstance(author, Chatter):
-            update_user_seen_last(author)
+            # update_user_seen_last(author)
             author_name = author.name
         else:
             author_name = MISSING_AUTHOR_NAME
@@ -249,8 +249,8 @@ class Bot(TwitchBot):
         # handle commands, including bad/nonexistent commands
         if message_content.lstrip().startswith(self.command_prefix):
             #TODO:add the actual command
-            if isinstance(author, Chatter) and isinstance(channel, Channel):
-                insert_history(author, channel, 'command')
+            # if isinstance(author, Chatter) and isinstance(channel, Channel):
+            #     insert_history(author, channel, 'command')
             #TODO:may need to handle parsing a bit more intelligently
             command = message_content.split()[0]
             command = command[1:]  # chop off the command prefix
@@ -266,7 +266,8 @@ class Bot(TwitchBot):
             return
 
         if isinstance(author, Chatter) and isinstance(channel, Channel):
-            insert_history(author, channel, 'message')
+            pass
+            # insert_history(author, channel, 'message')
         else:
             logger.debug("author %s isn't an author and channel %s isn't a channel", author, channel)
 
@@ -307,49 +308,49 @@ class Bot(TwitchBot):
         logger.debug("********** event_join\nuser: %s\nchannel: %s\n***********", user, channel)
 
         logger.info(f'event_join {channel.name} {user.name}')
-        insert_history(user, channel, 'join')
+        # insert_history(user, channel, 'join')
 
         # make sure the bot ignores itself and the streamer
         if user.name.lower() in self.ignore_users:
             return
 
         # TODO see if twitch has an event for when users enter the stream, not just when they say something
-        last_seen_dt = get_time_user_seen_last(user, channel)
+        # last_seen_dt = get_time_user_seen_last(user, channel)
 
-        minutes_since_user_seen_last = None
-        if last_seen_dt:
-            minutes_since_user_seen_last = now() - last_seen_dt
-            minutes_since_user_seen_last = (
-                minutes_since_user_seen_last.total_seconds() / 60
-            )
+        # minutes_since_user_seen_last = None
+        # if last_seen_dt:
+        #     minutes_since_user_seen_last = now() - last_seen_dt
+        #     minutes_since_user_seen_last = (
+        #         minutes_since_user_seen_last.total_seconds() / 60
+        #     )
 
-        greetlist = None
-        # never seen before
-        if not last_seen_dt:
-            greetlist = greetings
-        # seen, but it's been a while
-        elif (
-            last_seen_dt
-            and (minutes_since_user_seen_last is not None)
-            and (minutes_since_user_seen_last >= self.re_greet_minutes)
-        ):
-            greetlist = re_greetings
+        # greetlist = None
+        # # never seen before
+        # if not last_seen_dt:
+        #     greetlist = greetings
+        # # seen, but it's been a while
+        # elif (
+        #     last_seen_dt
+        #     and (minutes_since_user_seen_last is not None)
+        #     and (minutes_since_user_seen_last >= self.re_greet_minutes)
+        # ):
+        #     greetlist = re_greetings
 
         #TODO:be smarter about when to do this and when not to
-        if greetlist:
-            greeting = random.choice(greetlist)
-            message = greeting.format(user.name)
-            if random.random() < 0.1:
-                message += (
-                    f" I'm a robot! "
-                    f"Welcome to {next(robot_coffee_shop_name_generator)}. "
-                    f"{next(robot_greeting_generator)}"
-                )
-            # logger.debug(now(), message)
-            logger.info(f'{now()} ({channel.name}): {user.name} joined')
-            await self.send(channel, message)
+        # if greetlist:
+        #     greeting = random.choice(greetlist)
+        #     message = greeting.format(user.name)
+        #     if random.random() < 0.1:
+        #         message += (
+        #             f" I'm a robot! "
+        #             f"Welcome to {next(robot_coffee_shop_name_generator)}. "
+        #             f"{next(robot_greeting_generator)}"
+        #         )
+        #     # logger.debug(now(), message)
+        #     logger.info(f'{now()} ({channel.name}): {user.name} joined')
+        #     await self.send(channel, message)
 
-        update_user_seen_last(user)
+        # update_user_seen_last(user)
 
     async def event_part(self, chatter:Chatter, *args):
         args = list(args)
@@ -361,8 +362,8 @@ class Bot(TwitchBot):
             channel = getattr(chatter, 'channel', None)
             logging.debug('event_part got channel from chatter.channel')
         logger.info('%s:ch(%s): chatter has parted: %s', nowstr, channel, chatter)
-        if channel is not None:
-            update_user_exited_last(chatter, channel)
+        # if channel is not None:
+        #     update_user_exited_last(chatter, channel)
 
     def print_startup_message_file(self):
         startup_file_path = os.path.join(THIS_DIR, 'startup_message.txt')

@@ -27,6 +27,8 @@ coverage = "^7.3.2"
 pytest-asyncio = "^0.23.2"
 pytest-factoryboy = "^2.6.0"
 selenium = "^4.15.2"
+ipdb = "^0.13.13"
+ipython = "^8.18.1"
 
 
 [tool.poetry.group.docs.dependencies]
