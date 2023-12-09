@@ -42,6 +42,9 @@ build: docs frontend frontend_docs
 #TODO:windows
 #TODO:macos?
 
+windows: build
+    scp -r frontend/out/ 192.168.2.140:commandbay/frontend
+
 linux: build
 	poetry run pyinstaller --onefile --name commandbay --add-data start_server.py:. -y start_server.py
 

@@ -1,6 +1,4 @@
 from enum import Enum
-from errno import ERESTART
-from typing import Union
 
 from fastapi import APIRouter, Body
 from fastapi.exceptions import HTTPException

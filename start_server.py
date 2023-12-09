@@ -3,6 +3,7 @@ import subprocess
 import sys
 import argparse
 import logging
+import platform
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +80,7 @@ def get_poetry_exe_path(exe_name:str) -> str:
         subprocess.CalledProcessError: If the 'poetry env info -p' command fails.
     """
     try:
-        path = subprocess.check_output(["poetry", "run", "which", exe_name], text=True).strip()
+        path = subprocess.check_output(["poetry", "run", which(), exe_name], text=True).strip().split('\n')[0]
         return path
     except subprocess.CalledProcessError as e:
         print(f"Error occurred when trying to find poetry python executable path: {e}")
@@ -101,6 +102,7 @@ def ensure_database_updated():
     #     Base.metadata.create_all(engine)
     config = Config('alembic.ini')
     command.upgrade(config, 'head')
+
 
 def start_frontend_thread():
     from threading import Thread
@@ -157,6 +159,13 @@ def main():
     sys.argv = [uvicorn_path]+uvicorn_arguments
     print(f"Running {mode} server:", sys.argv)
     sys.exit(uvicorn_main())
+
+
+def which():
+    if platform.system() == 'Windows':
+        return 'where'
+    else:
+        return 'which'
 
 
 if __name__ == '__main__':
