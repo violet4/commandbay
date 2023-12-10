@@ -6,7 +6,6 @@ import logging
 import platform
 
 logger = logging.getLogger(__name__)
-logger.info("Starting with PID: %s", os.getpid())
 
 
 #TODO:log error messages anywhere these imports are unexpectedly None
@@ -170,6 +169,9 @@ def which():
 
 
 if __name__ == '__main__':
+    logger.setLevel(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO)
+    logger.info("Starting with PID: %s", os.getpid())
     try:
         sys.exit(main())
     # override KeyboardInterrupt so it's considered exit code=2
