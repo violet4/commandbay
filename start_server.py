@@ -6,6 +6,7 @@ import logging
 import platform
 
 logger = logging.getLogger(__name__)
+logger.info("Starting with PID: %s", os.getpid())
 
 
 #TODO:log error messages anywhere these imports are unexpectedly None
