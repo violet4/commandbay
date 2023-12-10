@@ -118,11 +118,10 @@ def swagger_monkey_patch(get_swagger_ui_html):
         for key, url in url_replacements.items():
             filename = os.path.basename(url)
             static_filename = os.path.join('static', filename)
-            abs_static_filename = os.path.abspath(static_filename)
-            if not os.path.exists(abs_static_filename):
+            if not os.path.exists(static_filename):
                 resp = requests.get(url)
                 if resp.status_code == 200:
-                    with open(abs_static_filename, 'wb') as fw:
+                    with open(static_filename, 'wb') as fw:
                         fw.write(resp.content)
             fixed_kwargs[key] = f'/{static_filename}'
 
