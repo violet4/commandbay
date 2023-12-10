@@ -25,6 +25,8 @@ from commandbay.utils.environ import environment as env
 
 
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.setLevel(level=logging.INFO)
 
 initialize_spotify()
 initialize_tts()
@@ -100,8 +102,11 @@ else:
 
 def resource_path(*relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
-    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_path, *relative_path)
+    # base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    rpath = os.path.join(os.path.dirname(__file__), *relative_path)
+
+    logger.error("logger.error rpath: '%s'", rpath)
+    return os.path.join(os.path.dirname(__file__), *relative_path)
 
 
 def swagger_monkey_patch(get_swagger_ui_html):
@@ -126,6 +131,8 @@ def swagger_monkey_patch(get_swagger_ui_html):
         for key, url in url_replacements.items():
             filename = os.path.basename(url)
             static_filename = resource_path('static', filename)
+            logger.error(f'logger.error static_filename "{static_filename}"')
+            print(f'print static_filename "{static_filename}"')
             if not os.path.exists(static_filename):
                 resp = requests.get(url)
                 if resp.status_code == 200:
