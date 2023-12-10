@@ -106,7 +106,11 @@ def resource_path(*relative_path):
     rpath = os.path.join(os.path.dirname(__file__), *relative_path)
 
     logger.error("logger.error rpath: '%s'", rpath)
-    return os.path.join(os.path.dirname(__file__), *relative_path)
+    print(f"server.py __file__: '{__file__}'")
+    print("sys.executable", sys.executable)
+    print(f'os.curdir: {os.curdir}')
+    print("sys.path", sys.path)
+    return os.path.join(os.path.dirname(os.path.dirname(__file__)), *relative_path)
 
 
 def swagger_monkey_patch(get_swagger_ui_html):
