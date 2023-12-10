@@ -44,8 +44,7 @@ build: docs frontend frontend_docs
 
 windows: build
 	scp -r frontend/out/ 192.168.2.140:commandbay/frontend
-	ssh 192.168.2.140 powershell 'cd commandbay; poetry run pyinstaller --onefile --name commandbay start_server.py --add-data start_server.py:. -y --hidden-import sqlite3 --hidden-import tzdata --hidden-import pysqlite2 --hidden-import MySQLdb --add-data static/swagger-ui-bundle.js:static --add-data static/swagger-ui.css:static'
-
+	ssh 192.168.2.140 powershell "cd commandbay; poetry run pyinstaller --onefile --clean --name commandbay start_server.py --add-data 'start_server.py;.' -y --add-data 'static;static'"
 
 linux: build
 	poetry run pyinstaller --onefile --name commandbay --add-data start_server.py:. -y start_server.py

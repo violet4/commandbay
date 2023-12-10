@@ -1,7 +1,9 @@
+import sys
 import logging
 import asyncio
 import os
 from functools import wraps
+from typing import List
 
 import requests
 
@@ -96,6 +98,12 @@ else:
                 raise HTTPException(404, "Can't connect to backend; is it running? npm run dev")
 
 
+def resource_path(*relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, *relative_path)
+
+
 def swagger_monkey_patch(get_swagger_ui_html):
     @wraps(get_swagger_ui_html)
     def wrapper(*args, **kwargs):
@@ -117,7 +125,7 @@ def swagger_monkey_patch(get_swagger_ui_html):
         fixed_kwargs = dict()
         for key, url in url_replacements.items():
             filename = os.path.basename(url)
-            static_filename = os.path.join('static', filename)
+            static_filename = resource_path('static', filename)
             if not os.path.exists(static_filename):
                 resp = requests.get(url)
                 if resp.status_code == 200:
