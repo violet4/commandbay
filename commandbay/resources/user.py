@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from commandbay.core.db import SessionLocal
 from commandbay.models.user import User
-from commandbay.resources.utils import ErrorResponseModel
+from commandbay.resources.utils import ErrorResponseModel, SuccessResponseModel
 
 
 user_router = APIRouter()
@@ -60,6 +60,28 @@ def update_user(user_id:int, updates:UserUpdateableSchema=Body(...)):
             )
 
         return UserResponseSchema.model_validate(db_user)
+
+
+@user_router.delete("/{user_id}", response_model=SuccessResponseModel)
+def delete_user(user_id:int):
+    with SessionLocal() as sess:
+        db_user = sess.query(User).where(User.user_id==user_id).one_or_none()
+        if db_user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="user_id not found",
+            )
+
+        try:
+            sess.delete(db_user)
+            sess.commit()
+        except IntegrityError as e:
+            raise HTTPException(
+                status_code=409,
+                detail=f'{type(e).__name__}: {e.__cause__}'
+            )
+
+        return SuccessResponseModel(success=True)
 
 
 @user_router.get("", response_model=List[UserResponseSchema])
