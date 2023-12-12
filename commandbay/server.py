@@ -3,7 +3,7 @@ import logging
 import asyncio
 import os
 from functools import wraps
-from typing import List
+from os.path import dirname
 
 import requests
 
@@ -19,7 +19,7 @@ from commandbay.resources.kanboard import kanboard_router
 from commandbay.resources.log_message import log_router
 from commandbay.resources.random_num import random_router
 from commandbay.resources.rewards import rewards_router
-from commandbay.resources.spotify import spotify_router, initialize_spotify
+#from commandbay.resources.spotify import spotify_router, initialize_spotify
 from commandbay.resources.do_tts import initialize_tts, tts_router
 from commandbay.utils.environ import environment as env
 
@@ -28,13 +28,13 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)
 
-initialize_spotify()
+# initialize_spotify()
 initialize_tts()
 
 api_router = APIRouter()
 api_router.include_router(prefix="/arduino",  router=arduino_router)
 api_router.include_router(prefix="/kanboard", router=kanboard_router)
-api_router.include_router(prefix='/spotify',  router=spotify_router)
+#api_router.include_router(prefix='/spotify',  router=spotify_router)
 api_router.include_router(prefix="/users", router=user_router)
 api_router.include_router(prefix="/tts", router=tts_router)
 api_router.include_router(prefix="/random", router=random_router)
@@ -48,6 +48,8 @@ app = FastAPI(
     title="CommandBay",
 )
 
+
+
 #TODO:don't hard-code violet.com.crt
 # @app.get("/static/violet.com.crt")
 # def get_ca_cert():
@@ -55,27 +57,31 @@ app = FastAPI(
 #         return HTMLResponse(
 #             fr.read(), headers={'Content-Type': 'application/x-x509-ca-cert'},
 #         )
-static_dir = "static" if os.path.exists('static') else os.path.join('..', 'static')
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+# static_dir = "static" if os.path.exists('static') else os.path.join('..', 'static')
+
+
+app.mount("/static", StaticFiles(directory=env.backend.static_backend_files_path), name="static")
 app.include_router(prefix="/api", router=api_router)
 
 # serve the now-static "compiled" frontend code
 # built with `npm run build`
 if env.frontend.static_frontend:
+    # static_frontend_files_path = 'frontend'
     static_frontend_files_path = env.frontend.static_frontend_files_path
     @app.get("/{path:path}")
     async def catch_all(path: str, request: Request):
         # path "users"
-        file_path = f'{static_frontend_files_path}/{path}'
+        file_path = os.path.join(static_frontend_files_path, path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
-        file_path = f'{static_frontend_files_path}/{path}.html'
+        file_path = os.path.join(static_frontend_files_path, f'{path}.html')
         if os.path.isfile(file_path):
             return FileResponse(file_path)
-        return FileResponse(f'{static_frontend_files_path}/index.html')
+        file_path = os.path.join(static_frontend_files_path, 'index.html')
+        return FileResponse(file_path)
 
-    static_frontend_files_path = static_frontend_files_path if os.path.exists(static_frontend_files_path) else os.path.join('..', static_frontend_files_path)
-    app.mount("/", StaticFiles(directory=static_frontend_files_path), name="frontend")
+    print("/ registered to", env.frontend.static_frontend_files_path, file=sys.stderr)
+    app.mount("/", StaticFiles(directory=env.frontend.static_frontend_files_path), name="frontend")
 
 # serve the frontend development nextjs server
 # run with `npm run dev`
@@ -100,19 +106,6 @@ else:
                 raise HTTPException(404, "Can't connect to backend; is it running? npm run dev")
 
 
-def resource_path(*relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    # base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-    rpath = os.path.join(os.path.dirname(__file__), *relative_path)
-
-    logger.error("logger.error rpath: '%s'", rpath)
-    print(f"server.py __file__: '{__file__}'")
-    print("sys.executable", sys.executable)
-    print(f'os.curdir: {os.curdir}')
-    print("sys.path", sys.path)
-    return os.path.join(os.path.dirname(os.path.dirname(__file__)), *relative_path)
-
-
 def swagger_monkey_patch(get_swagger_ui_html):
     @wraps(get_swagger_ui_html)
     def wrapper(*args, **kwargs):
@@ -134,9 +127,9 @@ def swagger_monkey_patch(get_swagger_ui_html):
         fixed_kwargs = dict()
         for key, url in url_replacements.items():
             filename = os.path.basename(url)
-            static_filename = resource_path('static', filename)
-            logger.error(f'logger.error static_filename "{static_filename}"')
-            print(f'print static_filename "{static_filename}"')
+            # THIS AFFECTS THE URL THAT GETS PUT IN THE SWAGGER UI HTML
+            # the urls need to stay relative, not absolute!
+            static_filename = os.path.join('static', filename)
             if not os.path.exists(static_filename):
                 resp = requests.get(url)
                 if resp.status_code == 200:

@@ -51,13 +51,13 @@ class PostReward(HtmlBaseModel):
     rewardCost:int
     rewardMessage:str = ""  # This is the user's associated text-based message
     rewardDescription:str = ""
-    rewardRedemptionId:str = ""
+    rewardRedemptionId:str = "" #TODO:uuid.UUID
 
 
 @tts_router.post(r"")
 def post_tts_message(
     user:Annotated[str, Body(...)],
-    user_id:uuid.UUID=Body(...),
+    user_id:int=Body(...),
     platform:str=Body(...),
     text:Optional[str]=Body(default=None),
     first_chat:Optional[bool]=Body(default=False),

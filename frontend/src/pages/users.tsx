@@ -8,5 +8,5 @@ export default function Users() {
 
     if (error) return <div>Failed to load users</div>;
     if (!users) return <div>Loading...</div>;
-    return <UsersTable users={users} />;
+    return <UsersTable in_users={users} />;
 }

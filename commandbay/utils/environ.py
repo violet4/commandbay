@@ -1,8 +1,22 @@
+import sys
 import os
+from os.path import dirname
 import platform as sys_platform
 import pathlib
 
 from pydantic import BaseModel, Field
+
+
+base_app_data_dir_path = dirname(dirname(dirname(os.path.abspath(__file__))))
+print("base_app_data_dir_path", base_app_data_dir_path, file=sys.stderr)
+print("os.path.abspath(base_app_data_dir_path)", os.path.abspath(base_app_data_dir_path), file=sys.stderr)
+def app_data_dir_path(*relative_path):
+    return os.path.join(base_app_data_dir_path, *relative_path)
+
+
+base_user_data_dir_path = getattr(sys, '_MEIPASS', dirname(dirname(os.path.abspath(__file__))))
+def user_data_dir_path(*relative_path):
+    return os.path.join(base_user_data_dir_path, *relative_path)
 
 
 class Platform(BaseModel):
@@ -38,13 +52,25 @@ class Linux(Platform):
 
 
 class Backend(BaseModel):
-    pass
+    static_backend_files_path: str = Field(default_factory=lambda:
+        os.environ.get(
+            'STATIC_BACKEND_FILES_PATH',
+            app_data_dir_path('static'),
+            # 'frontend/out',
+        )
+    )
 
 
 class Frontend(BaseModel):
     static_frontend: bool = False
-    static_frontend_files_path: str = Field(default_factory=lambda: os.environ.get('STATIC_FRONTEND_FILES_PATH', 'frontend/out'))
     frontend_port: str = Field(default_factory=lambda: os.environ.get('FRONTEND_PORT', '7322'))
+    static_frontend_files_path: str = Field(default_factory=lambda:
+        os.environ.get(
+            'STATIC_FRONTEND_FILES_PATH',
+            app_data_dir_path('frontend'),
+            # 'frontend/out'
+        )
+    )
 
 
 class Webserver(BaseModel):

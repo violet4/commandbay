@@ -18,13 +18,15 @@ _spotify: Optional[Spotify] = None
 
 def initialize_spotify():
     global _spotify
-    env = load_environment()
-    for spotify_key in ('SPOTIPY_CLIENT_ID', 'SPOTIPY_CLIENT_SECRET'):
-        os.environ[spotify_key] = env.get(spotify_key, None)
-    _spotify = Spotify()
+    settings = load_environment()
+    a = os.environ['SPOTIPY_CLIENT_ID'] = settings.settings.SPOTIPY_CLIENT_ID or ''
+    b = os.environ['SPOTIPY_CLIENT_SECRET'] = settings.settings.SPOTIPY_CLIENT_SECRET or ''
+    if a and b:
+        _spotify = Spotify()
 
 
 def verify_initialized():
+    global _spotify
     if _spotify is None:
         raise Exception("spotify not initialized; must call initialize_spotify()")
     return _spotify

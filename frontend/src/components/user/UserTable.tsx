@@ -1,11 +1,24 @@
 import { UserModel } from "@/models/User";
 import { UserRow } from "./User";
+import { requestConfirmation } from "@/utils";
+import React from "react";
 
 interface UsersTableProps {
-    users: UserModel[];
+    in_users: UserModel[];
 }
 
-export const UsersTable: React.FC<UsersTableProps> = ({ users }) => {
+export const UsersTable: React.FC<UsersTableProps> = ({ in_users }) => {
+    const [users, setUsers] = React.useState(in_users);
+    const deleteUser = (user_id: Number) => requestConfirmation(() => {
+        fetch(`/api/users/${user_id}`, {method: "DELETE"})
+            .then(resp => {
+                if (!resp.ok)
+                    throw new Error("Failed to delete user");
+            })
+            .then(() => {
+                setUsers(users.filter(user => user.user_id !== user_id));
+            });
+    });
     if (users === undefined) {
         return (
             <div>No Users</div>
@@ -15,6 +28,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users }) => {
         <table>
             <thead>
                 <tr>
+                    <th>Actions</th>
                     <th>ID</th>
                     <th>Name</th>
                     <th>TTS<br/>Included</th>
@@ -24,7 +38,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users }) => {
             </thead>
             <tbody>
                 {users.map(user => (
-                    <UserRow key={user.user_id} user={user} />
+                    <UserRow key={user.user_id} user={user} deleteUser={deleteUser(user.user_id)} />
                 ))}
             </tbody>
         </table>

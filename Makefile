@@ -44,9 +44,18 @@ build: docs frontend frontend_docs
 
 windows: build
 	scp -r frontend/out/ 192.168.2.140:commandbay/frontend
-	ssh 192.168.2.140 powershell "cd commandbay; poetry run pyinstaller --onefile --clean --name commandbay start_server.py --add-data 'start_server.py;.' -y --add-data 'static;static'"
+	ssh -A 192.168.2.140 powershell "cd commandbay; poetry run pyinstaller --onefile --clean --name commandbay start_server.py --add-data 'start_server.py;.' -y --add-data 'static;static' --hidden-import commandbay.models --additional-hooks-dir=."
 
 linux: build
-	poetry run pyinstaller --onefile --name commandbay --add-data start_server.py:. -y start_server.py
+	poetry run pyinstaller \
+		--onefile \
+		--name commandbay \
+		--add-data start_server.py:. \
+		--add-data alembic.ini:. \
+		--add-data alembic:alembic \
+		--add-data static:static \
+		--add-data frontend/out:frontend \
+		-y \
+		start_server.py
 
 all: linux

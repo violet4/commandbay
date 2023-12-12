@@ -1,9 +1,10 @@
-import React, { useCallback } from "react";
+import React from "react";
 import { UserModel } from "@/models/User";
 import { useKeyPressHandlers, json_headers } from "@/utils";
 
 interface UserRowProps {
     user: UserModel;
+    deleteUser: () => void;
 }
 
 type UpdatableFields = 'tts_nickname' | 'tts_included';
@@ -12,7 +13,7 @@ function isUpdatableField(field: any): field is UpdatableFields {
     return field === 'tts_nickname' || field === 'tts_included';
 }
 
-export const UserRow: React.FC<UserRowProps> = ({ user }) => {
+export const UserRow: React.FC<UserRowProps> = ({ user, deleteUser }) => {
     const [modifiedUserData, setModifiedUserData] = React.useState(user);
     const [savedUserData, setSavedUserData] = React.useState(user);
 
@@ -49,6 +50,7 @@ export const UserRow: React.FC<UserRowProps> = ({ user }) => {
 
     return (
         <tr>
+            <td><button onClick={deleteUser}>Delete</button></td>
             <td>{user.user_id}</td>
             <td>{user.name}</td>
             <td>

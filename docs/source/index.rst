@@ -13,6 +13,8 @@ Indices and tables
 CommandBay
 ==========
 
+Building on windows: python.org; pip install pipx; pipx install poetry; poetry issue: SET PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+
 .. automodule:: commandbay
    :members:
    :undoc-members:
@@ -24,5 +26,3 @@ CommandBay
    modules
 
 .. openapi:: openapi.json
-
-Building on windows: python.org; pip install pipx; pipx install poetry; poetry issue: SET PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
