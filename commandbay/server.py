@@ -49,7 +49,6 @@ app = FastAPI(
 )
 
 
-
 #TODO:don't hard-code violet.com.crt
 # @app.get("/static/violet.com.crt")
 # def get_ca_cert():
@@ -60,33 +59,35 @@ app = FastAPI(
 # static_dir = "static" if os.path.exists('static') else os.path.join('..', 'static')
 
 
+print(f"Mounting /static to '{env.backend.static_backend_files_path}' '{os.path.abspath(env.backend.static_backend_files_path)}", file=sys.stderr)
 app.mount("/static", StaticFiles(directory=env.backend.static_backend_files_path), name="static")
 app.include_router(prefix="/api", router=api_router)
+
 
 # serve the now-static "compiled" frontend code
 # built with `npm run build`
 if env.frontend.static_frontend:
-    # static_frontend_files_path = 'frontend'
-    static_frontend_files_path = env.frontend.static_frontend_files_path
     @app.get("/{path:path}")
     async def catch_all(path: str, request: Request):
         # path "users"
-        file_path = os.path.join(static_frontend_files_path, path)
+        file_path = os.path.join(env.frontend.static_frontend_files_path, path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
-        file_path = os.path.join(static_frontend_files_path, f'{path}.html')
+        file_path = os.path.join(env.frontend.static_frontend_files_path, f'{path}.html')
         if os.path.isfile(file_path):
             return FileResponse(file_path)
-        file_path = os.path.join(static_frontend_files_path, 'index.html')
+        file_path = os.path.join(env.frontend.static_frontend_files_path, 'index.html')
         return FileResponse(file_path)
 
-    print("/ registered to", env.frontend.static_frontend_files_path, file=sys.stderr)
+    print(f"Mounting / to '{env.frontend.static_frontend_files_path}' '{os.path.abspath(env.frontend.static_frontend_files_path)}'", file=sys.stderr)
     app.mount("/", StaticFiles(directory=env.frontend.static_frontend_files_path), name="frontend")
 
 # serve the frontend development nextjs server
 # run with `npm run dev`
 else:
-    app.mount("/docs", StaticFiles(directory=os.path.join('docs', 'build', 'html')), name="docs")
+    docs_build_html = os.path.join('docs', 'build', 'html')
+    print(f"Mounting /docs to docs_build_html '{docs_build_html}' '{os.path.abspath(docs_build_html)}'", file=sys.stderr)
+    app.mount("/docs", StaticFiles(directory=docs_build_html), name="docs")
 
     @app.get('/{path:path}')
     async def proxy_frontend(path: str):

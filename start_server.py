@@ -4,7 +4,7 @@ import sys
 import argparse
 import logging
 import subprocess
-from threading import Thread
+import signal
 
 from uvicorn.main import main as uvicorn_main
 from alembic.config import Config
@@ -55,11 +55,14 @@ def ensure_database_updated():
     command.upgrade(config, 'head')
 
 
-def start_frontend_thread():
-    def frontend_server_thread():
-        subprocess.run('cd frontend; npm run dev', shell=True)
-    thread = Thread(target=frontend_server_thread, daemon=True)
-    thread.start()
+def start_npm_dev():
+    npm_process = subprocess.Popen(['npm', 'run', 'dev'], cwd='frontend')
+    def signal_handler(signal, frame):
+        npm_process.terminate()
+        exit()
+    signal.signal(signal.SIGINT, signal_handler)
+    return npm_process
+
 
 
 def main():
@@ -74,6 +77,7 @@ def main():
     pargs, unknown = parse_args()
     if pargs is None:
         return
+    sys.argv = [sys.argv[0]]
 
     sys.argv.extend([
         # "commandbay.server:app",
@@ -83,7 +87,7 @@ def main():
     if pargs.dev:
         os.environ['PRODUCTION'] = '0'
         mode = 'development'
-        sys.argv.extend("--reload")
+        sys.argv.append("--reload")
     else:
         mode = 'production'
 
@@ -93,16 +97,18 @@ def main():
         sys.argv.extend(unknown)
 
     ensure_database_updated()
-    if pargs.dev:
-        start_frontend_thread()
+    npm_proc = start_npm_dev() if pargs.dev else None
     sys.argv.append('commandbay.server:app')
-    print(f"Running {mode} server:", sys.argv)
+    print(f"Running {mode} server: '{sys.argv}'", file=sys.stderr)
     try:
         uvicorn_main()
     # override KeyboardInterrupt so it's considered exit code=2
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         sys.exit(2)
+    finally:
+        if npm_proc is not None:
+            npm_proc.terminate()
 
 
 if __name__ == '__main__':

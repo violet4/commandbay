@@ -1,7 +1,7 @@
 import React, { useCallback } from "react";
 import useSWR from "swr";
 
-import { useKeyPressHandlers, json_headers } from "@/utils";
+import { useKeyPressHandlers, json_headers, requestConfirmation } from "@/utils";
 import { RewardModel } from "@/models/Reward";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -11,16 +11,27 @@ export default function Rewards() {
 
     if (error) return <div>Failed to load rewards</div>;
     if (!rewards) return <div>Loading...</div>;
-    return <RewardsTable rewards={rewards} />;
+    return <RewardsTable in_rewards={rewards} />;
 
 }
 
 interface RewardsTableProps {
-    rewards: RewardModel[];
+    in_rewards: RewardModel[];
 }
 
-export const RewardsTable: React.FC<RewardsTableProps> = ({ rewards }) => {
-    if (rewards === undefined) {
+export const RewardsTable: React.FC<RewardsTableProps> = ({ in_rewards }) => {
+    const [rewards, setRewards] = React.useState(in_rewards);
+    const deleteReward = (reward_id: Number) => requestConfirmation(() => {
+        fetch(`/api/rewards/${reward_id}`, {method: "DELETE"})
+            .then(resp => {
+                if (!resp.ok)
+                    throw new Error("Failed to delete reward");
+            })
+            .then(() => {
+                setRewards(rewards.filter(reward => reward.reward_id !== reward_id));
+            });
+    });
+    if (in_rewards === undefined) {
         return (
             <div>No rewards</div>
         );
@@ -29,7 +40,8 @@ export const RewardsTable: React.FC<RewardsTableProps> = ({ rewards }) => {
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>Actions</th>
+                    {/* <th>ID</th> */}
                     <th>Name</th>
                     <th>TTS<br/>Nickname</th>
                     <th></th>
@@ -37,7 +49,7 @@ export const RewardsTable: React.FC<RewardsTableProps> = ({ rewards }) => {
             </thead>
             <tbody>
                 {rewards.map(reward => (
-                    <RewardRow key={reward.reward_id} reward={reward} />
+                    <RewardRow key={reward.reward_id} reward={reward} deleteReward={deleteReward(reward.reward_id)} />
                 ))}
             </tbody>
         </table>
@@ -46,6 +58,7 @@ export const RewardsTable: React.FC<RewardsTableProps> = ({ rewards }) => {
 
 interface RewardRowProps {
     reward: RewardModel;
+    deleteReward: () => void;
 }
 
 type UpdatableFields = 'tts_name' | 'tts_included';
@@ -54,7 +67,7 @@ function isUpdatableField(field: any): field is UpdatableFields {
     return field === 'tts_name' || field === 'tts_included';
 }
 
-export const RewardRow: React.FC<RewardRowProps> = ({ reward }) => {
+export const RewardRow: React.FC<RewardRowProps> = ({ reward, deleteReward }) => {
     const [modifiedRewardData, setModifiedRewardData] = React.useState(reward);
     const [savedRewardData, setSavedRewardData] = React.useState(reward);
 
@@ -91,7 +104,8 @@ export const RewardRow: React.FC<RewardRowProps> = ({ reward }) => {
 
     return (
         <tr>
-            <td>{reward.reward_id}</td>
+            <td><button onClick={deleteReward}>Delete</button></td>
+            {/* <td>{reward.reward_id}</td> */}
             <td>{reward.name}</td>
             <td>
                 {/* nickname */}

@@ -51,7 +51,7 @@ export const UserRow: React.FC<UserRowProps> = ({ user, deleteUser }) => {
     return (
         <tr>
             <td><button onClick={deleteUser}>Delete</button></td>
-            <td>{user.user_id}</td>
+            {/* <td>{user.user_id}</td> */}
             <td>{user.name}</td>
             <td>
                 {/* tts included */}

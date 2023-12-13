@@ -1,13 +1,14 @@
+from sqlite3 import IntegrityError
 from typing import List, Optional, cast
 import logging
 import uuid
 
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, HTTPException
 from sqlalchemy import Column
 from commandbay.core.db import SessionLocal
 
 from commandbay.models.twitch.reward import Reward
-from commandbay.resources.utils import HtmlBaseModel
+from commandbay.resources.utils import HtmlBaseModel, SuccessResponseModel
 
 
 rewards_router = APIRouter()
@@ -52,3 +53,25 @@ def put_reward(
         reward.tts_name = cast(Column[str], tts_name)
         sess.commit()
         return RewardResponse.model_validate(reward)
+
+
+@rewards_router.delete("/{reward_id}", response_model=SuccessResponseModel)
+def delete_user(reward_id:int):
+    with SessionLocal() as sess:
+        db_user = sess.query(Reward).where(Reward.reward_id==reward_id).one_or_none()
+        if db_user is None:
+            raise HTTPException(
+                status_code=404,
+                detail="reward_id not found",
+            )
+
+        try:
+            sess.delete(db_user)
+            sess.commit()
+        except IntegrityError as e:
+            raise HTTPException(
+                status_code=409,
+                detail=f'{type(e).__name__}: {e.__cause__}'
+            )
+
+        return SuccessResponseModel(success=True)

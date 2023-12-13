@@ -29,7 +29,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ in_users }) => {
             <thead>
                 <tr>
                     <th>Actions</th>
-                    <th>ID</th>
+                    {/* <th>ID</th> */}
                     <th>Name</th>
                     <th>TTS<br/>Included</th>
                     <th>TTS<br/>Nickname</th>

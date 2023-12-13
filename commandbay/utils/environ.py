@@ -8,13 +8,11 @@ from pydantic import BaseModel, Field
 
 
 base_app_data_dir_path = dirname(dirname(dirname(os.path.abspath(__file__))))
-print("base_app_data_dir_path", base_app_data_dir_path, file=sys.stderr)
-print("os.path.abspath(base_app_data_dir_path)", os.path.abspath(base_app_data_dir_path), file=sys.stderr)
 def app_data_dir_path(*relative_path):
     return os.path.join(base_app_data_dir_path, *relative_path)
 
 
-base_user_data_dir_path = getattr(sys, '_MEIPASS', dirname(dirname(os.path.abspath(__file__))))
+base_user_data_dir_path = os.path.abspath(getattr(sys, '_MEIPASS', base_app_data_dir_path))
 def user_data_dir_path(*relative_path):
     return os.path.join(base_user_data_dir_path, *relative_path)
 
@@ -67,7 +65,7 @@ class Frontend(BaseModel):
     static_frontend_files_path: str = Field(default_factory=lambda:
         os.environ.get(
             'STATIC_FRONTEND_FILES_PATH',
-            app_data_dir_path('frontend'),
+            app_data_dir_path('frontend', 'out'),
             # 'frontend/out'
         )
     )
