@@ -1,7 +1,7 @@
-import React, { useCallback } from "react";
+import React from "react";
 import useSWR from "swr";
 
-import { useKeyPressHandlers, json_headers, requestConfirmation } from "@/utils";
+import { useKeyPressHandlers, json_headers, requestConfirmation, IndigoButton } from "@/utils";
 import { RewardModel } from "@/models/Reward";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -104,7 +104,7 @@ export const RewardRow: React.FC<RewardRowProps> = ({ reward, deleteReward }) =>
 
     return (
         <tr>
-            <td><button onClick={deleteReward}>Delete</button></td>
+            <td><button className='indigo-button' onClick={deleteReward}>Delete</button></td>
             {/* <td>{reward.reward_id}</td> */}
             <td>{reward.name}</td>
             <td>
@@ -116,8 +116,8 @@ export const RewardRow: React.FC<RewardRowProps> = ({ reward, deleteReward }) =>
                 />
                 {modifiedRewardData.tts_name!==savedRewardData.tts_name &&
                     <>
-                        <button onClick={saveNameChange}>Save</button>
-                        <button onClick={cancelNameChange}>Cancel</button>
+                        <button className="indigo-button" onClick={saveNameChange}>Save</button>
+                        <button className="indigo-button" onClick={cancelNameChange}>Cancel</button>
                     </>
                 }
             </td>

@@ -1,6 +1,6 @@
 import React from "react";
 import { UserModel } from "@/models/User";
-import { useKeyPressHandlers, json_headers } from "@/utils";
+import { useKeyPressHandlers, json_headers, buttonClasses } from "@/utils";
 
 interface UserRowProps {
     user: UserModel;
@@ -50,7 +50,7 @@ export const UserRow: React.FC<UserRowProps> = ({ user, deleteUser }) => {
 
     return (
         <tr>
-            <td><button onClick={deleteUser}>Delete</button></td>
+            <td><button className="indigo-button" onClick={deleteUser}>Delete</button></td>
             {/* <td>{user.user_id}</td> */}
             <td>{user.name}</td>
             <td>
@@ -75,8 +75,8 @@ export const UserRow: React.FC<UserRowProps> = ({ user, deleteUser }) => {
                 />
                 {modifiedUserData.tts_nickname!==savedUserData.tts_nickname &&
                     <>
-                        <button onClick={saveNameChange}>Save</button>
-                        <button onClick={cancelNameChange}>Cancel</button>
+                        <button className="indigo-button" onClick={saveNameChange}>Save</button>
+                        <button className="indigo-button" onClick={cancelNameChange}>Cancel</button>
                     </>
                 }
             </td>

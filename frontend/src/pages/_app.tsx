@@ -1,8 +1,29 @@
 import type { AppProps } from 'next/app'
 
 import '@/styles/globals.css'
-import Navbar from '@/components/Navbar'
+import NavbarLeft from '@/components/NavbarLeft';
+import NavbarTop from '@/components/NavbarTop';
 
 export default function MyApp({ Component, pageProps }: AppProps) {
-  return <><Navbar/><Component {...pageProps} /></>
+  return (
+    <div className="flex h-screen bg-gray-100">
+      {/* Left Sidebar */}
+      <aside className="w-64 border-r border-gray-200">
+        <NavbarLeft /> {/* Your left navbar component */}
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Navbar */}
+        <header>
+          <NavbarTop /> {/* Your top navbar component */}
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto">
+          <Component {...pageProps} />
+        </main>
+      </div>
+    </div>
+  );
 }
