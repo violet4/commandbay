@@ -7,7 +7,6 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-* `Return to CommandBay App </>`_
 
 
 CommandBay

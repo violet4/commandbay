@@ -1,7 +1,7 @@
 import React from "react";
 import useSWR from "swr";
 
-import { useKeyPressHandlers, json_headers, requestConfirmation, IndigoButton } from "@/utils";
+import { useKeyPressHandlers, json_headers, requestConfirmation } from "@/utils";
 import { RewardModel } from "@/models/Reward";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());

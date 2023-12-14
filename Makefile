@@ -34,10 +34,14 @@ frontend_docs:
 
 
 dev:
-	python start_server.py --dev
+	poetry run python start_server.py --dev
+
+version:
+	python scripts/version.py
+
 
 .PHONY: build
-build: docs frontend frontend_docs
+build: docs frontend frontend_docs version
 
 #TODO:windows
 #TODO:macos?

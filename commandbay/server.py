@@ -3,13 +3,12 @@ import logging
 import asyncio
 import os
 from functools import wraps
-from os.path import dirname
+from fastapi.responses import PlainTextResponse
 
 import requests
 
-from aiohttp import ClientConnectorError, ClientSession, ClientWebSocketResponse
-from fastapi import FastAPI, APIRouter, HTTPException, Request, WebSocket, applications
-from fastapi.responses import FileResponse, HTMLResponse
+from aiohttp import ClientSession, ClientWebSocketResponse
+from fastapi import FastAPI, APIRouter, WebSocket, applications
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi import docs
 
@@ -21,8 +20,9 @@ from commandbay.resources.random_num import random_router
 from commandbay.resources.rewards import rewards_router
 #from commandbay.resources.spotify import spotify_router, initialize_spotify
 from commandbay.resources.do_tts import initialize_tts, tts_router
+from commandbay.resources.utils import host_live_frontend_and_docs, host_static_frontend
 from commandbay.utils.environ import environment as env
-
+import commandbay
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -41,13 +41,17 @@ api_router.include_router(prefix="/random", router=random_router)
 api_router.include_router(prefix="/log", router=log_router)
 api_router.include_router(prefix="/rewards", router=rewards_router)
 
+@api_router.get('/version')
+def get_version():
+    return {'version': commandbay.__version__}
+
+
 app = FastAPI(
     openapi_url="/api/v0/openapi.json",
     docs_url='/api/v0/docs',
-    version='0.0.1',
+    version=commandbay.__version__,
     title="CommandBay",
 )
-
 
 #TODO:don't hard-code violet.com.crt
 # @app.get("/static/violet.com.crt")
@@ -58,53 +62,16 @@ app = FastAPI(
 #         )
 # static_dir = "static" if os.path.exists('static') else os.path.join('..', 'static')
 
-
 print(f"Mounting /static to '{env.backend.static_backend_files_path}' '{os.path.abspath(env.backend.static_backend_files_path)}", file=sys.stderr)
 app.mount("/static", StaticFiles(directory=env.backend.static_backend_files_path), name="static")
 app.include_router(prefix="/api", router=api_router)
 
-
-# serve the now-static "compiled" frontend code
-# built with `npm run build`
-if env.frontend.static_frontend:
-    @app.get("/{path:path}")
-    async def catch_all(path: str, request: Request):
-        # path "users"
-        file_path = os.path.join(env.frontend.static_frontend_files_path, path)
-        if os.path.isfile(file_path):
-            return FileResponse(file_path)
-        file_path = os.path.join(env.frontend.static_frontend_files_path, f'{path}.html')
-        if os.path.isfile(file_path):
-            return FileResponse(file_path)
-        file_path = os.path.join(env.frontend.static_frontend_files_path, 'index.html')
-        return FileResponse(file_path)
-
-    print(f"Mounting / to '{env.frontend.static_frontend_files_path}' '{os.path.abspath(env.frontend.static_frontend_files_path)}'", file=sys.stderr)
-    app.mount("/", StaticFiles(directory=env.frontend.static_frontend_files_path), name="frontend")
-
-# serve the frontend development nextjs server
-# run with `npm run dev`
-else:
-    docs_build_html = os.path.join('docs', 'build', 'html')
-    print(f"Mounting /docs to docs_build_html '{docs_build_html}' '{os.path.abspath(docs_build_html)}'", file=sys.stderr)
-    app.mount("/docs", StaticFiles(directory=docs_build_html), name="docs")
-
-    @app.get('/{path:path}')
-    async def proxy_frontend(path: str):
-        async with ClientSession() as sess:
-            ws = env.webserver
-            fe = env.frontend
-            frontend_dev_server = f'{ws.bind_protocol}://{ws.bind_host}:{fe.frontend_port}'
-            full_path = f'{frontend_dev_server}/{path}'
-            try:
-                async with sess.get(full_path) as resp:
-                    return HTMLResponse(
-                        await resp.read(),
-                        status_code=resp.status,
-                        media_type=resp.content_type,
-                    )
-            except ClientConnectorError:
-                raise HTTPException(404, "Can't connect to backend; is it running? npm run dev")
+# serve the now-static "compiled" frontend code built with `npm run build`
+if env.production:
+    host_static_frontend(app)
+# serve the frontend development nextjs server from a `npm run dev` process
+else:  # dev
+    host_live_frontend_and_docs(app)
 
 
 def swagger_monkey_patch(get_swagger_ui_html):

@@ -1,17 +1,17 @@
-import Image from 'next/image'
-
-const Gt = () => {
-  return (
-    <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-      -&gt;
-    </span>
-  );
-};
+import useSWR from 'swr';
 
 export default function About() {
+  const {data: version, error} = useSWR('/api/version', (url: string) => fetch(url).then(res => res.json()));
+
+  if (error) return <div>Failed to load rewards</div>;
+  const version_text = version?version.version:'Loading..';
+  const final_version_text = error?`Failed to load: ${error}`:version_text;
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      About me! Yay!
+    <main>
+      <h1 className="text-3xl">CommandBay</h1>
+      <div>
+        Version: {final_version_text}
+      </div>
     </main>
-  )
+  );
 }

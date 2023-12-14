@@ -5,10 +5,11 @@ import NavbarLeft from '@/components/NavbarLeft';
 import NavbarTop from '@/components/NavbarTop';
 
 export default function MyApp({ Component, pageProps }: AppProps) {
+  const topNavbarHeight = 40;
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Left Sidebar */}
-      <aside className="w-64 border-r border-gray-200">
+      <aside className="border-r border-gray-200">
         <NavbarLeft /> {/* Your left navbar component */}
       </aside>
 
@@ -16,7 +17,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
       <div className="flex-1 flex flex-col">
         {/* Top Navbar */}
         <header>
-          <NavbarTop /> {/* Your top navbar component */}
+          <NavbarTop height={topNavbarHeight} /> {/* Your top navbar component */}
         </header>
 
         {/* Page Content */}
