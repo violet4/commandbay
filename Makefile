@@ -39,7 +39,6 @@ dev:
 version:
 	python scripts/version.py
 
-
 .PHONY: build
 build: docs frontend frontend_docs version
 

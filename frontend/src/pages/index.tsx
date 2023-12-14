@@ -10,8 +10,11 @@ const Gt = () => {
 
 export default function Index() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      Welcome to CommandBay!
+    <main>
+      <h1 className="text-3xl">CommandBay</h1>
+      <div>
+        Welcome to CommandBay!
+      </div>
     </main>
   )
 }
