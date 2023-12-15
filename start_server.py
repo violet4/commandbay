@@ -1,3 +1,22 @@
+"""
+Welcome to
+   _____                                          _ ____
+  / ____|                                        | |  _ \
+ | |     ___  _ __ ___  _ __ ___   __ _ _ __   __| | |_) | __ _ _   _
+ | |    / _ \| '_ ` _ \| '_ ` _ \ / _` | '_ \ / _` |  _ < / _` | | | |
+ | |___| (_) | | | | | | | | | | | (_| | | | | (_| | |_) | (_| | |_| |
+  \_____\___/|_| |_| |_|_| |_| |_|\__,_|_| |_|\__,_|____/ \__,_|\__, |
+                                                                 __/ |
+                                                                |___/
+Once the server is started, you can visit the user interface in
+your web browser at:
+
+    http://localhost:7321
+
+If you have any issues please reach out on github at https://github.com/violet4/commandbay/issues
+
+"""
+# ascii art courtesy https://patorjk.com/software/taag/#p=display&h=1&v=0&f=Big&t=CommandBay
 import os
 import subprocess
 import sys
@@ -103,6 +122,7 @@ def main():
     npm_proc = start_npm_dev() if pargs.dev else None
     sys.argv.append('commandbay.server:app')
     print(f"Running {mode} server: '{sys.argv}'", file=sys.stderr)
+    print(__doc__, file=sys.stderr)
     try:
         uvicorn_main()
     # override KeyboardInterrupt so it's considered exit code=2

@@ -97,17 +97,18 @@ def swagger_monkey_patch(get_swagger_ui_html):
             filename = os.path.basename(url)
             # THIS AFFECTS THE URL THAT GETS PUT IN THE SWAGGER UI HTML
             # the urls need to stay relative, not absolute!
-            static_filename = (
+            static_url_path = f'static/{filename}'
+            static_filename_abspath = (
                 env.pyinstaller_app_data_dir_path
                 if env.production
                 else env.app_data_dir_path
             )('static', filename)
-            if not os.path.exists(static_filename):
+            if not os.path.exists(static_filename_abspath):
                 resp = requests.get(url)
                 if resp.status_code == 200:
-                    with open(static_filename, 'wb') as fw:
+                    with open(static_filename_abspath, 'wb') as fw:
                         fw.write(resp.content)
-            fixed_kwargs[key] = f'/{static_filename}'
+            fixed_kwargs[key] = f'/{static_url_path}'
 
         return get_swagger_ui_html(*args, **kwargs, **fixed_kwargs)
     return wrapper

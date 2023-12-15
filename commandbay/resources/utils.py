@@ -62,7 +62,6 @@ def host_live_frontend_and_docs(app:FastAPI):
 def host_static_frontend(app:FastAPI):
     @app.get("/{path:path}")
     async def catch_all(path: str, request: Request):
-        print(f"path '{path}'", file=sys.stderr)
         # path "users"
         file_path = os.path.join(env.frontend.static_frontend_files_path, path)
         if os.path.isfile(file_path):
