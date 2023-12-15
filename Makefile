@@ -47,7 +47,8 @@ build: docs frontend frontend_docs version
 
 windows: build
 	scp -r frontend/out/ 192.168.2.140:commandbay/frontend
-	ssh -A 192.168.2.140 powershell "cd commandbay; poetry run pyinstaller --onefile --clean --name commandbay start_server.py --add-data 'start_server.py;.' -y --add-data 'static;static' --hidden-import commandbay.models --additional-hooks-dir=."
+	scp commandbay/version.py 192.168.2.140:commandbay/commandbay
+	ssh -A 192.168.2.140 powershell "cd commandbay; poetry run pyinstaller --onefile --clean --name commandbay start_server.py --add-data 'start_server.py;.' --add-data 'alembic.ini;.' --add-data 'alembic;alembic' -y --add-data 'frontend/out;frontend' --add-data 'static;static' --hidden-import commandbay.version --hidden-import commandbay.models --additional-hooks-dir=. --icon 'frontend\src\app\favicon.ico'"
 
 linux: build
 	poetry run pyinstaller \

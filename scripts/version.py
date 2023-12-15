@@ -17,13 +17,13 @@ def get_git_commit_hash():
 def calculate_full_version():
     version = read_version()
     git_commit_hash = get_git_commit_hash()
-    full_version_string = f'{version}-{git_commit_hash}'
-    return full_version_string
+    return version, git_commit_hash
 
 
 def main():
-    full_version_string = calculate_full_version()
-    version_py_contents = f'''version = "{full_version_string}"'''
+    version, git_commit_hash = calculate_full_version()
+    full_version_string = f"{version}-{git_commit_hash}"
+    version_py_contents = f'''version = "{version}"\nfull_version = "{full_version_string}"'''
 
     # version.txt
     with open('version.txt', 'w') as fw:
