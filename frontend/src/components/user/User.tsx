@@ -1,6 +1,6 @@
 import React from "react";
 import { UserModel } from "@/models/User";
-import { useKeyPressHandlers, json_headers, buttonClasses } from "@/utils";
+import { useKeyPressHandlers, json_headers } from "@/utils";
 
 interface UserRowProps {
     user: UserModel;

@@ -27,6 +27,9 @@
   .indigo-button {
     @apply block px-2 py-1 bg-indigo-400 hover:bg-indigo-900 rounded-md text-gray-700 hover:text-gray-900 transition duration-150 ease-in-out w-full text-left;
   }
+  .link-style {
+    @apply text-blue-600 underline;
+  }
 }
 /* body {
   color: rgb(var(--foreground-rgb));

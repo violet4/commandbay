@@ -21,7 +21,7 @@ interface RewardsTableProps {
 
 export const RewardsTable: React.FC<RewardsTableProps> = ({ in_rewards }) => {
     const [rewards, setRewards] = React.useState(in_rewards);
-    const deleteReward = (reward_id: Number) => requestConfirmation(() => {
+    const deleteReward = (message: string) => (reward_id: Number) => requestConfirmation(message)(() => {
         fetch(`/api/rewards/${reward_id}`, {method: "DELETE"})
             .then(resp => {
                 if (!resp.ok)
@@ -49,7 +49,10 @@ export const RewardsTable: React.FC<RewardsTableProps> = ({ in_rewards }) => {
             </thead>
             <tbody>
                 {rewards.map(reward => (
-                    <RewardRow key={reward.reward_id} reward={reward} deleteReward={deleteReward(reward.reward_id)} />
+                    <RewardRow key={reward.reward_id}
+                        reward={reward}
+                        deleteReward={deleteReward(`Are you sure you want to delete reward '${reward.name}'?`)(reward.reward_id)}
+                    />
                 ))}
             </tbody>
         </table>

@@ -34,9 +34,9 @@ export const useKeyPressHandlers = (keyEvents: KeyEvents) => {
 
 export const json_headers = {'Content-Type': 'application/json'};
 
-export const requestConfirmation = (callback: () => void) => {
+export const requestConfirmation = (message: string) => (callback: () => void) => {
     return () => {
-        if (window.confirm("Are you sure you want to proceed?"))
+        if (window.confirm(message))
             callback();
     };
 };

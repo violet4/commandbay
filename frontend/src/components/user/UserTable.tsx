@@ -9,7 +9,7 @@ interface UsersTableProps {
 
 export const UsersTable: React.FC<UsersTableProps> = ({ in_users }) => {
     const [users, setUsers] = React.useState(in_users);
-    const deleteUser = (user_id: Number) => requestConfirmation(() => {
+    const deleteUser = (message: string, user_id: Number) => requestConfirmation(message)(() => {
         fetch(`/api/users/${user_id}`, {method: "DELETE"})
             .then(resp => {
                 if (!resp.ok)
@@ -38,7 +38,9 @@ export const UsersTable: React.FC<UsersTableProps> = ({ in_users }) => {
             </thead>
             <tbody>
                 {users.map(user => (
-                    <UserRow key={user.user_id} user={user} deleteUser={deleteUser(user.user_id)} />
+                    <UserRow key={user.user_id} user={user}
+                        deleteUser={deleteUser(`Are you sure you want to delete user '${user.name}'?`, user.user_id)}
+                    />
                 ))}
             </tbody>
         </table>
