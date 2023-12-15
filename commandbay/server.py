@@ -3,7 +3,6 @@ import logging
 import asyncio
 import os
 from functools import wraps
-from fastapi.responses import PlainTextResponse
 
 import requests
 
@@ -43,9 +42,10 @@ api_router.include_router(prefix="/rewards", router=rewards_router)
 
 @api_router.get('/version')
 def get_version():
-    return {'version': commandbay.__version__}
+    return {'version': commandbay.full_version}
 
-
+print(f"commandbay.__version__ {commandbay.__version__}", file=sys.stderr)
+print(f"commandbay.__version__ {commandbay.__version__}")
 app = FastAPI(
     openapi_url="/api/v0/openapi.json",
     docs_url='/api/v0/docs',
@@ -97,7 +97,11 @@ def swagger_monkey_patch(get_swagger_ui_html):
             filename = os.path.basename(url)
             # THIS AFFECTS THE URL THAT GETS PUT IN THE SWAGGER UI HTML
             # the urls need to stay relative, not absolute!
-            static_filename = os.path.join('static', filename)
+            static_filename = (
+                env.pyinstaller_app_data_dir_path
+                if env.production
+                else env.app_data_dir_path
+            )('static', filename)
             if not os.path.exists(static_filename):
                 resp = requests.get(url)
                 if resp.status_code == 200:

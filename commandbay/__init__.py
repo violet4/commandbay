@@ -1,3 +1,4 @@
+import sys
 import subprocess
 import os
 from os.path import dirname
@@ -20,15 +21,17 @@ def get_pyproject_version():
     return str(data.get('tool', {}).get('poetry', {}).get('version', ''))
 
 
-def get_version_version():
-    from commandbay.version import version
-    return version
+def get_versions():
+    from commandbay.version import version, full_version
+    return version, full_version
 
 
+# version is written by scripts/version.py called in `make version` in `make build`
 try:
-    __version__ = get_version_version()
+    __version__, full_version = get_versions()
 except ImportError:
     try:
-        __version__ = f'{get_pyproject_version()}-{get_git_commit_hash()}'
+        __version__ = get_pyproject_version()
+        full_version = f"{__version__}-{get_git_commit_hash()}"
     except:
-        __version__ = ''
+        __version__ = full_version = ''

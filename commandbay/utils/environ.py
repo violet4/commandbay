@@ -3,18 +3,15 @@ import os
 from os.path import dirname
 import platform as sys_platform
 import pathlib
+import sys
 
 from pydantic import BaseModel, Field
 
 
-base_app_data_dir_path = dirname(dirname(dirname(os.path.abspath(__file__))))
-def app_data_dir_path(*relative_path):
-    return os.path.join(base_app_data_dir_path, *relative_path)
-
-
-base_user_data_dir_path = os.path.abspath(getattr(sys, '_MEIPASS', base_app_data_dir_path))
-def user_data_dir_path(*relative_path):
-    return os.path.join(base_user_data_dir_path, *relative_path)
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    _in_bundle = True
+else:
+    _in_bundle = False
 
 
 class Platform(BaseModel):
@@ -49,6 +46,11 @@ class Linux(Platform):
     data_dir: str = Field(default_factory=lambda: os.path.join(os.path.expanduser('~'), '.local', 'share', 'commandbay'))
 
 
+base_app_data_dir_path = dirname(dirname(dirname(os.path.abspath(__file__))))
+def app_data_dir_path(*relative_path):
+    return os.path.join(base_app_data_dir_path, *relative_path)
+
+
 class Backend(BaseModel):
     static_backend_files_path: str = Field(default_factory=lambda:
         os.environ.get(
@@ -65,7 +67,7 @@ class Frontend(BaseModel):
     static_frontend_files_path: str = Field(default_factory=lambda:
         os.environ.get(
             'STATIC_FRONTEND_FILES_PATH',
-            app_data_dir_path('frontend', 'out'),
+            app_data_dir_path('frontend', *([] if _in_bundle else ['out'])),
             # 'frontend/out'
         )
     )
@@ -77,6 +79,17 @@ class Webserver(BaseModel):
     bind_host: str = Field(default_factory=lambda: os.environ.get('BIND_HOST', 'localhost'))
 
 
+_commandbay_base_dir: str = dirname(dirname(dirname(os.path.abspath(__file__))))
+_app_data_directory: str = getattr(sys, '_MEIPASS', _commandbay_base_dir)
+_static_dir: str = os.path.join(_app_data_directory, 'static')
+
+
+class AppData(BaseModel):
+    commandbay_base_dir: str = Field(default_factory=lambda: _commandbay_base_dir)
+    app_data_directory: str = Field(default_factory=lambda: _app_data_directory)
+    static_dir: str = Field(default_factory=lambda: _static_dir)
+
+
 class Environment(BaseModel):
     production: bool = Field(default_factory=lambda: os.environ.get('PRODUCTION', '1')=='1')
     backend: Backend = Backend()
@@ -85,10 +98,23 @@ class Environment(BaseModel):
     platform: Platform = Platform.get_platform()
     sqlite_file_path: str = os.path.join(platform.data_dir, 'db.sqlite3')
     sqlite_db_url: str = f'sqlite:///{sqlite_file_path}'
+    appData: AppData = AppData()
+    in_bundle: bool = _in_bundle
 
     def __init__(self, **data):
         super().__init__(**data)
         self.frontend.static_frontend = self.production
+
+    def user_data_dir_path(self, *relative_path):
+        return os.path.join(self.platform.data_dir, *relative_path)
+
+    @staticmethod
+    def pyinstaller_app_data_dir_path(*relative_path):
+        return os.path.join(_app_data_directory, *relative_path)
+
+    @staticmethod
+    def app_data_dir_path(*args):
+        return app_data_dir_path(*args)
 
 
 environment = Environment()

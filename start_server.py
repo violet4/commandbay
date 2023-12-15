@@ -13,8 +13,12 @@ from alembic import command
 
 # from commandbay.core.db import engine, Base
 from commandbay.utils.environ import app_data_dir_path, environment as env
-from commandbay.server import app
-
+try:
+    from commandbay.server import app
+except Exception as e:
+    import traceback
+    traceback.print_exc()
+    print(f"error: '{e}'")
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +68,6 @@ def start_npm_dev():
     return npm_process
 
 
-
 def main():
     """
     Main function to execute the script.
@@ -106,6 +109,11 @@ def main():
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         sys.exit(2)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(e)
+        input("Press enter key to exit")
     finally:
         if npm_proc is not None:
             npm_proc.terminate()

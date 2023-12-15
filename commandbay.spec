@@ -5,9 +5,9 @@ a = Analysis(
     ['start_server.py'],
     pathex=[],
     binaries=[],
-    datas=[('start_server.py', '.')],
-    hiddenimports=[],
-    hookspath=[],
+    datas=[('start_server.py', '.'), ('alembic.ini', '.'), ('alembic', 'alembic'), ('frontend/out', 'frontend'), ('static', 'static')],
+    hiddenimports=['commandbay.version', 'commandbay.models'],
+    hookspath=['.'],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
@@ -34,4 +34,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['frontend\\src\\app\\favicon.ico'],
 )
