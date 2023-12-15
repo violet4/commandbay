@@ -149,8 +149,6 @@ def handle_current_items(current_message_containers: Dict[str, MessagesContainer
             for message in message_container.texts:
                 tts.say(message)
             already = True
- 
-    tts.runAndWait()
 
 
 def handle_queue():
