@@ -40,12 +40,12 @@ api_router.include_router(prefix="/random", router=random_router)
 api_router.include_router(prefix="/log", router=log_router)
 api_router.include_router(prefix="/rewards", router=rewards_router)
 
+
 @api_router.get('/version')
 def get_version():
     return {'version': commandbay.full_version}
 
-print(f"commandbay.__version__ {commandbay.__version__}", file=sys.stderr)
-print(f"commandbay.__version__ {commandbay.__version__}")
+
 app = FastAPI(
     openapi_url="/api/v0/openapi.json",
     docs_url='/api/v0/docs',
