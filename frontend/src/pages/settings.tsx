@@ -1,34 +1,30 @@
 import useSWR from "swr";
 import Form, { IChangeEvent } from '@rjsf/core';
 import validator from '@rjsf/validator-ajv8';
-import { FormEvent } from 'react';
+import { useState } from 'react';
 import { json_headers } from "@/utils";
 
 
 export default function Settings() {
     const fetcher = (url: string) => fetch(url).then(res => res.json());
     const {data: settings_schema, error: schema_error} = useSWR('/api/settings/openapi.json', fetcher);
-    const {data: settings, error: settings_error} = useSWR('/api/settings', fetcher);
-    // Cannot find name 'ISubmitEvent'. Did you mean 'SubmitEvent'?ts(2552)
-    // lib.dom.d.ts(21821, 13): 'SubmitEvent' is declared here.
-    // type ISubmitEvent = /*unresolved*/ any
-    const handleSubmit = (e: IChangeEvent<any>) => {
-        // Your custom submit logic goes here
-        const formData = e.formData;
-        console.log("Form data submitted:", formData);
 
-        // For example, sending data to your API:
+    const [settings, setSettings] = useState(null);
+    const [formData, setFormData] = useState(null);
+    const {error: settings_error} = useSWR('/api/settings', fetcher, {onSuccess: data => {setSettings(data); setFormData(data)}});
+
+    const handleSubmit = (e: IChangeEvent<any>) => {
+        var focusedElement = document.activeElement as HTMLElement;
         fetch('/api/settings', {
             method: 'PUT',
             headers: json_headers,
-            body: JSON.stringify(formData),
+            body: JSON.stringify(e.formData),
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Success:', data);
-        })
-        .catch((error) => {
-            console.error('Error:', error);
+            setSettings(data);
+            setFormData(data);
+            // focusedElement.focus();
         });
     };
 
@@ -43,7 +39,8 @@ export default function Settings() {
         <Form
             schema={settings_schema}
             validator={validator}
-            formData={settings}
+            formData={formData}
+            onChange={e => setFormData(e.formData)}
             onSubmit={handleSubmit}
         />
     );
