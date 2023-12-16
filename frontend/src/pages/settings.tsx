@@ -14,7 +14,6 @@ export default function Settings() {
     const {error: settings_error} = useSWR('/api/settings', fetcher, {onSuccess: data => {setSettings(data); setFormData(data)}});
 
     const handleSubmit = (e: IChangeEvent<any>) => {
-        var focusedElement = document.activeElement as HTMLElement;
         fetch('/api/settings', {
             method: 'PUT',
             headers: json_headers,
@@ -24,7 +23,6 @@ export default function Settings() {
         .then(data => {
             setSettings(data);
             setFormData(data);
-            // focusedElement.focus();
         });
     };
 

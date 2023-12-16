@@ -23,13 +23,17 @@
   background-color: rgb(82, 59, 117);
 }
 
+.button {
+  @apply
+    block rounded-md px-2 py-1 m-2
+    bg-indigo-400 hover:bg-indigo-900
+    text-gray-700 hover:text-gray-900
+    transition duration-150 ease-in-out;
+}
+
 @layer components {
   .indigo-button {
-    @apply
-      block px-2 py-1  rounded-md
-      bg-indigo-400 hover:bg-indigo-900
-      text-gray-700 hover:text-gray-900
-      transition duration-150 ease-in-out w-full text-left;
+    @apply button;
   }
   .link-style {
     @apply text-blue-600 underline;
@@ -56,6 +60,12 @@ div.form-group:nth-child(1) {
   @apply px-4 py-4;
   background-color: rgba(15, 12, 188, 0.455);
 }
+
+/* settings page submit button */
+.btn {
+  @apply button;
+}
+
 /* body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
