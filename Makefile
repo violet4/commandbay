@@ -47,7 +47,8 @@ build: docs frontend frontend_docs version
 
 windows: build
 	scp -r frontend/out/ 192.168.2.140:commandbay/frontend
-	scp commandbay/version.py 192.168.2.140:commandbay/commandbay
+#	scp commandbay/version.py 192.168.2.140:commandbay/commandbay
+	rsync --exclude='*.o' --exclude=build --exclude='*.cache' --exclude='.pytest_cache' --exclude='*.a' --exclude='*.db' --exclude='*.sqlite*' --exclude=.vscode --exclude='htmlcov' --exclude='_next' --exclude='.next' --exclude='*.pyc' -v --exclude=node_modules --exclude=.venv --exclude .git -r --rsync-path='C:\cygwin64\bin\rsync.exe' . 192.168.2.140:commandbay
 	ssh -A 192.168.2.140 powershell "cd commandbay; poetry run pyinstaller --onefile --clean --name commandbay start_server.py --add-data 'start_server.py;.' --add-data 'alembic.ini;.' --add-data 'alembic;alembic' -y --add-data 'frontend/out;frontend' --add-data 'static;static' --hidden-import commandbay.version --hidden-import commandbay.models --additional-hooks-dir=. --icon 'frontend\src\app\favicon.ico'"
 
 linux: build
