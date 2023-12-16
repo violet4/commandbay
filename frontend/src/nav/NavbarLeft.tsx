@@ -46,6 +46,7 @@ export default function NavbarLeft() {
                 <NavNode title="Home"     href="/" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
                 <NavNode title="Users"    href="/users" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
                 <NavNode title="Rewards"  href="/rewards" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
+                <NavNode title="Settings" href="/settings" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
                 <NavNode title="About"    href="/about" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
                 <NavNode title="Help" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} >
                     <NavNode title="Documentation" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} >

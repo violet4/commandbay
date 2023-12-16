@@ -25,11 +25,36 @@
 
 @layer components {
   .indigo-button {
-    @apply block px-2 py-1 bg-indigo-400 hover:bg-indigo-900 rounded-md text-gray-700 hover:text-gray-900 transition duration-150 ease-in-out w-full text-left;
+    @apply
+      block px-2 py-1  rounded-md
+      bg-indigo-400 hover:bg-indigo-900
+      text-gray-700 hover:text-gray-900
+      transition duration-150 ease-in-out w-full text-left;
   }
   .link-style {
     @apply text-blue-600 underline;
   }
+}
+
+.control-label, .form-control, .form-group {
+  @apply px-1 py-1;
+}
+
+/* key */ .control-label {}
+/* value */ .form-control {@apply ml-auto;}
+/* make container screen-width */ fieldset {@apply w-full;}
+/* push data entry fields to the right */ .form-group {@apply ml-auto flex w-full px-1 py-1 mx-1 my-1;}
+
+div.form-group div.field-object div.form-group.field:nth-child(odd) {
+  background-color: rgb(135, 135, 135);
+}
+
+div.form-group div.field-object div.form-group.field:nth-child(even) {
+  background-color: rgba(52, 52, 52, 0.29);
+}
+div.form-group:nth-child(1) {
+  @apply px-4 py-4;
+  background-color: rgba(15, 12, 188, 0.455);
 }
 /* body {
   color: rgb(var(--foreground-rgb));

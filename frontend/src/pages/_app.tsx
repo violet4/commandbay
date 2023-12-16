@@ -1,8 +1,8 @@
 import type { AppProps } from 'next/app'
 
 import '@/styles/globals.css'
-import NavbarLeft from '@/components/NavbarLeft';
-import NavbarTop from '@/components/NavbarTop';
+import NavbarLeft from '@/nav/NavbarLeft';
+import NavbarTop from '@/nav/NavbarTop';
 
 export default function MyApp({ Component, pageProps }: AppProps) {
   const topNavbarHeight = 40;

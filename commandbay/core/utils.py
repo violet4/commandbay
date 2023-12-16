@@ -3,21 +3,15 @@ import pstats
 import io
 from functools import wraps
 import random
-from typing import List, Optional
+from typing import List, Callable
 import datetime
 import re
-from typing import Callable, Dict
 import logging
 import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib import parse
 
 import requests
-import yaml
-
-from pydantic import BaseModel
-from commandbay.utils.environ import user_data_dir_path
-
 
 
 url_re = re.compile(r'https?://[^ ]+')
@@ -26,41 +20,6 @@ log_format = '%(levelname)s:%(module)s:%(asctime)s:%(pathname)s:%(lineno)d:%(mes
 log_formatter = logging.Formatter(log_format)
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-class SettingsModel(BaseModel):
-    SPOTIPY_CLIENT_ID: Optional[str]
-    SPOTIPY_CLIENT_SECRET: Optional[str]
-
-
-class Settings:
-    filepath: str
-    settings: SettingsModel
-    def __init__(self, filepath:str):
-        self.settings = self.load(filepath)
-        self.filepath = filepath
-
-    def save(self):
-        with open(self.filepath, 'w') as fw:
-            yaml.safe_dump(self.settings, fw)
-
-    def load(self, filepath:str):
-        if os.path.exists(filepath):
-            with open(filepath, 'r') as fr:
-                data = yaml.safe_load(fr)
-        else:
-            data = dict()
-        settings = SettingsModel(**data)
-        return settings
-
-
-#TODO:use yaml instead
-
-
-def load_environment() -> Settings:
-    settings_filepath = user_data_dir_path('settings.yaml')
-    settings = Settings(settings_filepath)
-    return settings
 
 
 def extract_datetime(dt_string, default=datetime.datetime.now):

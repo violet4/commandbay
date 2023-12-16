@@ -20,6 +20,7 @@ from commandbay.resources.rewards import rewards_router
 #from commandbay.resources.spotify import spotify_router, initialize_spotify
 from commandbay.resources.do_tts import initialize_tts, tts_router
 from commandbay.resources.utils import host_live_frontend_and_docs, host_static_frontend
+from commandbay.resources.settings import settings_router
 from commandbay.utils.environ import environment as env
 import commandbay
 
@@ -39,6 +40,7 @@ api_router.include_router(prefix="/tts", router=tts_router)
 api_router.include_router(prefix="/random", router=random_router)
 api_router.include_router(prefix="/log", router=log_router)
 api_router.include_router(prefix="/rewards", router=rewards_router)
+api_router.include_router(prefix="/settings", router=settings_router)
 
 
 @api_router.get('/version')

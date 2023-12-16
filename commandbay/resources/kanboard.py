@@ -2,7 +2,7 @@ from typing import Optional
 from fastapi import APIRouter, Body
 from pydantic import BaseModel
 
-from commandbay.core.kanboard import Kanboard
+from commandbay.core.integrations.kanboard import Kanboard
 
 
 kanboard_router = APIRouter()
