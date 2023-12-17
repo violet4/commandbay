@@ -16,24 +16,20 @@ spotify_router = APIRouter()
 _spotify: Optional[Spotify] = None
 
 
-def initialize_spotify():
+def ensure_initialized():
     global _spotify
-    a = os.environ['SPOTIPY_CLIENT_ID'] = settings.settings.spotify.SPOTIPY_CLIENT_ID or ''
-    b = os.environ['SPOTIPY_CLIENT_SECRET'] = settings.settings.spotify.SPOTIPY_CLIENT_SECRET or ''
+    if _spotify is not None:
+        return _spotify
+    a = os.environ['SPOTIPY_CLIENT_ID'] = settings.settings.spotify.SPOTIPY_CLIENT_ID.get_secret_value() or ''
+    b = os.environ['SPOTIPY_CLIENT_SECRET'] = settings.settings.spotify.SPOTIPY_CLIENT_SECRET.get_secret_value() or ''
     if a and b:
         _spotify = Spotify()
-
-
-def verify_initialized():
-    global _spotify
-    if _spotify is None:
-        raise Exception("spotify not initialized; must call initialize_spotify()")
     return _spotify
 
 
 @spotify_router.get('/song')
 async def get_current_song():
-    _spotify = verify_initialized()
+    _spotify = ensure_initialized()
     if _spotify is None:
         raise HTTPException(503, detail="Not connected to spotify")
     song_str = _spotify.get_current_song_str()
@@ -42,7 +38,9 @@ async def get_current_song():
 
 @spotify_router.put('/song')
 async def put(method:SpotifyMethod=Body(...)):
-    _spotify = verify_initialized()
+    _spotify = ensure_initialized()
+    if _spotify is None:
+        return {'errors': ['not initialized (no creds?)']}
     if method == SpotifyMethod.ADD.value:
         error_dict = _spotify.add()
         if error_dict is None:

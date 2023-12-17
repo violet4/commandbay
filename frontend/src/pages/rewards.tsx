@@ -37,25 +37,27 @@ export const RewardsTable: React.FC<RewardsTableProps> = ({ in_rewards }) => {
         );
     }
     return (
-        <table>
-            <thead>
-                <tr>
-                    <th>Actions</th>
-                    {/* <th>ID</th> */}
-                    <th>Name</th>
-                    <th>TTS<br/>Nickname</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {rewards.map(reward => (
-                    <RewardRow key={reward.reward_id}
-                        reward={reward}
-                        deleteReward={deleteReward(`Are you sure you want to delete reward '${reward.name}'?`)(reward.reward_id)}
-                    />
-                ))}
-            </tbody>
-        </table>
+        <div className='pb-24'>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Actions</th>
+                        {/* <th>ID</th> */}
+                        <th>Name</th>
+                        <th>TTS<br/>Nickname</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rewards.map(reward => (
+                        <RewardRow key={reward.reward_id}
+                            reward={reward}
+                            deleteReward={deleteReward(`Are you sure you want to delete reward '${reward.name}'?`)(reward.reward_id)}
+                        />
+                    ))}
+                </tbody>
+            </table>
+        </div>
     );
 };
 

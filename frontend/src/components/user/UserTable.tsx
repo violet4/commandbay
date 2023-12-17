@@ -25,24 +25,26 @@ export const UsersTable: React.FC<UsersTableProps> = ({ in_users }) => {
         );
     }
     return (
-        <table>
-            <thead>
-                <tr>
-                    <th>Actions</th>
-                    {/* <th>ID</th> */}
-                    <th>Name</th>
-                    <th>TTS<br/>Included</th>
-                    <th>TTS<br/>Nickname</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {users.map(user => (
-                    <UserRow key={user.user_id} user={user}
-                        deleteUser={deleteUser(`Are you sure you want to delete user '${user.name}'?`, user.user_id)}
-                    />
-                ))}
-            </tbody>
-        </table>
+        <div className='pb-24'>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Actions</th>
+                        {/* <th>ID</th> */}
+                        <th>Name</th>
+                        <th>TTS<br/>Included</th>
+                        <th>TTS<br/>Nickname</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {users.map(user => (
+                        <UserRow key={user.user_id} user={user}
+                            deleteUser={deleteUser(`Are you sure you want to delete user '${user.name}'?`, user.user_id)}
+                        />
+                    ))}
+                </tbody>
+            </table>
+        </div>
     );
 };
