@@ -1,3 +1,0 @@
-# spotify commmands; NO QUOTES
-SPOTIPY_CLIENT_ID=aaaaaaaaaaaaaaaaa
-SPOTIPY_CLIENT_SECRET=aaaaaaaaaaaaaaaa
