@@ -10,6 +10,9 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
         model = User
         sqlalchemy_session = SessionLocal()  # SQLAlchemy session
 
-    # id = factory.Sequence(lambda n: n)
+    user_id = factory.Sequence(lambda n: n)
     name = factory.Faker('name')
-    email = factory.Faker('email')
+    platform_user_id = factory.Faker('uuid4')
+    tts_included = factory.Faker('boolean')
+    tts_nickname = factory.Faker('word')
+    platform = 'twitch'

@@ -2,6 +2,7 @@
 import subprocess
 import os
 import time
+import signal
 
 import pytest
 from selenium import webdriver
@@ -10,23 +11,28 @@ from selenium.webdriver.firefox.options import Options
 from .factories import UserFactory
 
 
-def server_has_started(process:subprocess.Popen):
+def server_has_started(process:subprocess.Popen, line:bytes, fail_start:bytes):
     while True:
-        output = b''
-        if process.stdout is not None:
-            output = process.stdout.readline()
-        if b"Ready in" in output:  # Replace with actual readiness message
-            break
+        if process.stdout is None:
+            return
+        output = process.stdout.readline()
+        if line in output:
+            return True
+        if fail_start in output:
+            process.terminate()
+            raise Exception("Process failed to start")
         time.sleep(0.1)  # Short sleep to avoid tight loop
 
-@pytest.fixture(scope="session", autouse=True)
-def start_nextjs_server():
-    os.chdir('frontend')
-    process = subprocess.Popen(['npm', 'run', 'dev'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-    server_has_started(process)
+@pytest.fixture(scope="session", autouse=True)
+def start_backend_server():
+    process = subprocess.Popen(['poetry', 'run', 'python', 'start_server.py'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    if not server_has_started(process, b'Application startup complete.', b'zzzzzzzzzzz'):
+        return
     yield
-    process.kill()
+    process.send_signal(signal.SIGINT)
+    process.terminate()
 
 
 @pytest.fixture(scope="function")

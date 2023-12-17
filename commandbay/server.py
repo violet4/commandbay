@@ -24,6 +24,7 @@ from commandbay.resources.settings import settings_router
 from commandbay.utils.environ import environment as env
 import commandbay
 
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)

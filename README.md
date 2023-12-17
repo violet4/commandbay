@@ -4,19 +4,11 @@ Handy cross-platform Twitch bot capabilities exposed through a localhost HTTP se
 
 # Getting Started
 
-* `cp env_sample.txt env.txt`
-* add spotify credentials to `env.txt` if you want spotify access
-* `poetry install --only=main`
-* run the server: `python start_server.py`
-* Test it out: visit http://localhost:7321/api/v0/docs in your web browser to see and interact with the API through a SwaggerUI
-
-Run the web interface:
-* `cd frontend`
-* `npm install`
-* `npm run dev`
-* visit http://localhost:7321 in your browser (note that the backend server must be running)
+* Run the development server: `make dev`; Notes:
+    * This runs `npm install` in the frontend directory
+    * This runs `poetry install --only=main` in the main directory
+* Visit http://localhost:7321 in your web browser! Documentation is included in the web interface, including a SwaggerUI to see and interact with the HTTP API
 
 Run the tests:
 
-* `poetry run pytest --cov=commandbay tests/`
-* generate html coverage reports: `poetry run coverage html`
+* `make test`

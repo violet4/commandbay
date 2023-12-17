@@ -33,8 +33,31 @@ frontend_docs:
 	cp -r docs/build/html/* frontend/out/docs
 
 
-dev:
+# dev
+backend_deps:
+	poetry install --only=main
+frontend_deps:
+	cd frontend && npm install
+dev: backend_deps frontend_deps
 	poetry run python start_server.py --dev
+run: backend_deps frontend_deps
+	poetry run python start_server.py
+
+
+coverage_report:
+	poetry run coverage html
+	@printf "\n\nOpen in your web browser:\n\n"
+	@realpath htmlcov/index.html
+	@echo
+
+# test
+test:
+	poetry run pytest --cov=commandbay tests/
+	$(MAKE) coverage_report
+test2:
+	poetry run pytest --cov=commandbay tests/ --capture=no
+	$(MAKE) coverage_report
+
 
 version:
 	python scripts/version.py
