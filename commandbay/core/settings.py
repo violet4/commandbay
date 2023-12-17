@@ -24,14 +24,8 @@ class BaseModelUpdate(BaseModel):
 
 
 class Spotify(BaseModel):
-    SPOTIPY_CLIENT_ID: SecretStr = Field(
-        default_factory=lambda: SecretStr(''), description="Spotify Client ID",
-        examples=[""],
-    )
-    SPOTIPY_CLIENT_SECRET: SecretStr = Field(
-        default_factory=lambda: SecretStr(''), description="Spotify Client Secret",
-        examples=[""],
-    )
+    SPOTIPY_CLIENT_ID: SecretStr = Field(default_factory=lambda: SecretStr(''), examples=[""])
+    SPOTIPY_CLIENT_SECRET: SecretStr = Field(default_factory=lambda: SecretStr(''), examples=[""])
 
     def update(self, o: 'Spotify'):
         self.SPOTIPY_CLIENT_ID.update(o.SPOTIPY_CLIENT_ID)
