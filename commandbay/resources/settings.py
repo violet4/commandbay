@@ -23,6 +23,6 @@ def get_settings():
 
 @settings_router.put("")
 def put_settings(settings_data:Settings=Body(...)):
-    settings.settings = settings_data  #TODO:update the data with audit trail instead of just overwriting variable
+    settings.update(settings_data)  #TODO:update the data with audit trail instead of just overwriting variable
     settings.save()
-    return Settings.model_dump(settings.settings)
+    return settings.settings.model_dump()

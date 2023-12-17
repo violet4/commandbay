@@ -1,30 +1,61 @@
 import os
-from typing import Optional, List, Dict
+from typing import TypeVar, Type
+from abc import abstractmethod
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr as PydanticSecretStr
 import yaml
+from yaml.dumper import Dumper
 
 from commandbay.utils.environ import environment as env
 
 
-class Spotify(BaseModel):
-    SPOTIPY_CLIENT_ID: str = ''
-    SPOTIPY_CLIENT_SECRET: str = ''
+class SecretStr(PydanticSecretStr):
+    def update(self, value:'SecretStr'):
+        if value.get_secret_value() == str(self):
+            return
+        self._secret_value = value.get_secret_value()
 
 
-class Twitch(BaseModel):
+T = TypeVar('T', bound='BaseModelUpdate')
+class BaseModelUpdate(BaseModel):
+    @abstractmethod
+    def update(self: T, o: T) -> None:
+        pass
+
+
+class Spotify(BaseModelUpdate):
+    SPOTIPY_CLIENT_ID: SecretStr = SecretStr('')
+    SPOTIPY_CLIENT_SECRET: SecretStr = SecretStr('')
+
+    def update(self, o: 'Spotify'):
+        self.SPOTIPY_CLIENT_ID.update(o.SPOTIPY_CLIENT_ID)
+        self.SPOTIPY_CLIENT_SECRET.update(o.SPOTIPY_CLIENT_SECRET)
+
+
+class Twitch(BaseModelUpdate):
     bot_prefix: str = '!'
-    # TMI_TOKEN: str = ''
-    # CLIENT_ID: str = ''
-    # CLIENT_SECRET: str = ''
-    # BOT_NICK: str = ''
-    # OWNER_ID: str = ''
-    # re_greet_minutes: int = 60*4
+
+    def update(self, o: 'Twitch'):
+        self.bot_prefix = o.bot_prefix
 
 
-class Settings(BaseModel):
+class Settings(BaseModelUpdate):
     spotify: Spotify = Field(default_factory=lambda: Spotify(**{}))
     twitch: Twitch = Field(default_factory=lambda: Twitch(**{}))
+
+    def update(self, o: 'Settings'):
+        self.spotify.update(o.spotify)
+        self.twitch.update(o.twitch)
+
+
+class SettingsDumper(Dumper):
+    """
+    Enable the ability to save SecretStr secret value when writing to file
+    """
+    def represent_SecretStr(self, data: SecretStr):
+        return self.represent_scalar('tag:yaml.org,2002:str', data.get_secret_value())
+
+SettingsDumper.add_representer(SecretStr, SettingsDumper.represent_SecretStr)
 
 
 class SettingsFile:
@@ -36,7 +67,7 @@ class SettingsFile:
 
     def save(self):
         with open(self.filepath, 'w') as fw:
-            yaml.safe_dump(self.settings.model_dump(), fw)
+            yaml.dump(self.settings.model_dump(), fw, Dumper=SettingsDumper)
 
     def load(self, filepath:str):
         if os.path.exists(filepath):
@@ -46,6 +77,9 @@ class SettingsFile:
             data = dict()
         settings = Settings(**(data if data else {}))
         return settings
+
+    def update(self, s: Settings):
+        self.settings.update(s)
 
 
 settings = SettingsFile(env.user_data_dir_path('settings.yaml'))

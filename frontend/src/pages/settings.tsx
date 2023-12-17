@@ -1,17 +1,24 @@
-import useSWR from "swr";
 import Form, { IChangeEvent } from '@rjsf/core';
 import validator from '@rjsf/validator-ajv8';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { json_headers } from "@/utils";
 
 
 export default function Settings() {
-    const fetcher = (url: string) => fetch(url).then(res => res.json());
-    const {data: settings_schema, error: schema_error} = useSWR('/api/settings/openapi.json', fetcher);
-
     const [settings, setSettings] = useState(null);
-    const [formData, setFormData] = useState(null);
-    const {error: settings_error} = useSWR('/api/settings', fetcher, {onSuccess: data => {setSettings(data); setFormData(data)}});
+    const [settingsSchema, setSettingsSchema] = useState(null);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetch('/api/settings/openapi.json')
+            .then(r => r.json())
+            .then(data => setSettingsSchema(data));
+
+        fetch('/api/settings')
+            .then(r => r.json())
+            .then(data => setSettings(data))
+            .catch(err => setError(err))
+    }, []);
 
     const handleSubmit = (e: IChangeEvent<any>) => {
         fetch('/api/settings', {
@@ -20,25 +27,19 @@ export default function Settings() {
             body: JSON.stringify(e.formData),
         })
         .then(response => response.json())
-        .then(data => {
-            setSettings(data);
-            setFormData(data);
-        });
+        .then(data => setSettings(data))
+        .catch(err => setError(err));
     };
 
-    if (settings_error) return <div>Failed to load settings</div>;
-    if (schema_error) return <div>Failed to load schema</div>;
-    var loading: string[] = [];
-    if (!settings_schema)loading = loading.concat(['Schema']);
-    if (!settings)loading = loading.concat(['Settings']);
-    if (loading.length > 0)
-        return <div>Loading {loading.join(' and ')}...</div>;
+    if (error) return <div>Failed to load; error: {error}</div>;
+    if (!settings || !settingsSchema)
+        return <div>Loading...</div>;
     return (
         <Form
-            schema={settings_schema}
+            schema={settingsSchema}
             validator={validator}
-            formData={formData}
-            onChange={e => setFormData(e.formData)}
+            formData={settings}
+            onChange={e => setSettings(e.formData)}
             onSubmit={handleSubmit}
         />
     );
