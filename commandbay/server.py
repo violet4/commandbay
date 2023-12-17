@@ -18,7 +18,7 @@ from commandbay.resources.log_message import log_router
 from commandbay.resources.random_num import random_router
 from commandbay.resources.rewards import rewards_router
 from commandbay.resources.spotify import spotify_router
-from commandbay.resources.do_tts import tts_router
+from commandbay.resources.do_tts import initialize_tts, tts_router
 from commandbay.resources.utils import host_live_frontend_and_docs, host_static_frontend
 from commandbay.resources.settings import settings_router
 from commandbay.utils.environ import environment as env
@@ -29,6 +29,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.INFO)
 
+initialize_tts()
 
 api_router = APIRouter()
 api_router.include_router(prefix="/arduino",  router=arduino_router)
