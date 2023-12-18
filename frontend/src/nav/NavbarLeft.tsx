@@ -48,12 +48,10 @@ export default function NavbarLeft() {
                 <NavNode title="Rewards"  href="/rewards" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
                 <NavNode title="Settings" href="/settings" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
                 <NavNode title="About"    href="/about" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
-                <NavNode title="Help" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} >
-                    <NavNode title="Documentation" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} >
-                        <NavNode title="Sphinx" href="/appdocs" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
-                        <NavNode title="API"    href="/apidocs" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
-                    </NavNode>
-                </NavNode>
+                <NavNode title="Documentation" href="/appdocs" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
+                <NavNode title="API"           href="/apidocs" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} />
+                {/* <NavNode title="Help" closeTopNav={closeTopNav} setTopDropdown={setTopDropdown} >
+                </NavNode> */}
             </ul>
         </nav>
     );
