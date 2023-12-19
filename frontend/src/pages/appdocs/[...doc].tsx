@@ -1,10 +1,9 @@
 import { useRouter } from 'next/router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
-export default function ApiDocs() {
+export default function AppDocs() {
     const router = useRouter();
     const iframeRef = useRef<HTMLIFrameElement>(null);
-
     const path = Array.isArray(router.query.doc) ? router.query.doc.join('/') : router.query.doc;
 
     // when user clicks on a link in the frame, sync the url bar
@@ -29,6 +28,7 @@ export default function ApiDocs() {
         };
     }, []);
 
+    // when a page is first visited, scroll to the hash
     useEffect(() => {
         const scrollToHash = () => {
             const hash = window.location.hash;
@@ -60,11 +60,10 @@ export default function ApiDocs() {
                 const iframeURL = new URL(event.data.url);
                 const path = iframeURL.pathname;
                 const search = iframeURL.search;
-                const hash = iframeURL.hash;
+                iframeURL.hash = window.location.hash;
 
-                const newUrl = `/appdocs${path.replace('/docs', '')}${search}${hash}`;
+                const newUrl = `/appdocs${path.replace('/docs', '')}${search}${window.location.hash}`;
                 if (window.location.href !== newUrl) {
-                    console.log(`does this ever happen????`)
                     window.history.pushState({}, '', newUrl);
                 }
             }
@@ -82,5 +81,3 @@ export default function ApiDocs() {
 
     return <iframe ref={iframeRef} src={iframeSrc} style={{ width: '100%', height: '100%' }} />;
 }
-//     return <iframe src="/docs/index.html" style={{height: "100%", width: "100%"}}/>;
-// }

@@ -9,6 +9,7 @@ interface NodeProps {
     setTopDropdown: (isOpen: boolean) => void;
 };
 
+//TODO:need side navigation refactor. currently doesn't work as desired, and the code is difficult to work on. the only complexity to see on the screen at a given time should be the logic associated with expanding and collapsing navigation dropdowns. everything else that's simple and already done should be extracted into separate components.
 const NavNode: React.FC<NodeProps> = ({children, href=null, title, closeTopNav, setTopDropdown}) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const toggleDropdown = () => {

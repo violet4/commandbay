@@ -2,7 +2,7 @@
 ################################################################################
 ## only build frontend when there are changes
 BUILD_MARKER := .last_build
-SRC_FILES := $(wildcard src/**/*)
+SRC_FILES := $(shell find src)
 .PHONY: build
 build: $(BUILD_MARKER)
 $(BUILD_MARKER): $(SRC_FILES)

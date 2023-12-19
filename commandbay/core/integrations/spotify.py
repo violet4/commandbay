@@ -6,6 +6,7 @@ from spotipy.client import Spotify as Spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
 from commandbay.core.utils import log_formatter
+from commandbay.utils.timeout import timeout
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class Spotify(Spotipy):
         self.next_song_info_time = 0.0
         self.current_song_info = ''
 
+    @timeout(6)
     def _get_current_playback(self, retry_count=5) -> dict:
         for _ in range(retry_count):
             try:
@@ -39,9 +41,8 @@ class Spotify(Spotipy):
         logger.error(msg)
         return {'error':msg}
 
-    def get_current_song_str(self, force_response:bool=False) -> str:
+    def get_current_song_str(self) -> str:
         """
-        implement force_response
         needed test cases:
         * no song playing (and hasn't in a while so the api call will not return a current song)
         """

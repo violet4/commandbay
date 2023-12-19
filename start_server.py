@@ -47,6 +47,7 @@ class ServerNamespace(argparse.Namespace):
     dev:bool = False
     host:str
     port:str
+    suppress_frontend:bool = False
 
 
 def parse_args():
@@ -63,6 +64,7 @@ def parse_args():
     cl_args.add_argument('--dev', default=False, action='store_true')
     cl_args.add_argument('--host', default=env.webserver.bind_host)
     cl_args.add_argument('--port', default=env.webserver.backend_port)
+    cl_args.add_argument('--suppress-frontend', default=False, action='store_true')
     pargs, unknown = cl_args.parse_known_args(namespace=ServerNamespace)
     return pargs, unknown
 
@@ -119,7 +121,7 @@ def main():
         sys.argv.extend(unknown)
 
     ensure_database_updated()
-    npm_proc = start_npm_dev() if pargs.dev else None
+    npm_proc = start_npm_dev() if (pargs.dev and not pargs.suppress_frontend) else None
     sys.argv.append('commandbay.server:app')
     print(f"Running {mode} server: '{sys.argv}'", file=sys.stderr)
     print(__doc__, file=sys.stderr)
