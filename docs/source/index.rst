@@ -24,5 +24,3 @@ Building on windows: python.org; pip install pipx; pipx install poetry; poetry i
 
    firebot/index
 ..   modules
-
-.. .. openapi:: openapi.json
