@@ -36,6 +36,7 @@ ipython = "^8.18.1"
 sphinx = "^7.2.6"
 poetry-plugin-export = "^1.6.0"
 sphinxcontrib-openapi = "^0.8.3"
+sphinx-rtd-theme = "^2.0.0"
 
 
 [tool.poetry.group.build.dependencies]

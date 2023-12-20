@@ -5509,6 +5509,25 @@ mistune = ">=2.0,<3.0"
 pygments = ">=2.8"
 
 [[package]]
+name = "sphinx-rtd-theme"
+version = "2.0.0"
+description = "Read the Docs theme for Sphinx"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "sphinx_rtd_theme-2.0.0-py2.py3-none-any.whl", hash = "sha256:ec93d0856dc280cf3aee9a4c9807c60e027c7f7b461b77aeffed682e68f0e586"},
+    {file = "sphinx_rtd_theme-2.0.0.tar.gz", hash = "sha256:bd5d7b80622406762073a04ef8fadc5f9151261563d47027de09910ce03afe6b"},
+]
+
+[package.dependencies]
+docutils = "<0.21"
+sphinx = ">=5,<8"
+sphinxcontrib-jquery = ">=4,<5"
+
+[package.extras]
+dev = ["bump2version", "sphinxcontrib-httpdomain", "transifex-client", "wheel"]
+
+[[package]]
 name = "sphinxcontrib-applehelp"
 version = "1.0.7"
 description = "sphinxcontrib-applehelp is a Sphinx extension which outputs Apple help books"
@@ -5576,6 +5595,20 @@ files = [
 [package.dependencies]
 six = "*"
 Sphinx = ">=1.6"
+
+[[package]]
+name = "sphinxcontrib-jquery"
+version = "4.1"
+description = "Extension to include jQuery on newer Sphinx releases"
+optional = false
+python-versions = ">=2.7"
+files = [
+    {file = "sphinxcontrib-jquery-4.1.tar.gz", hash = "sha256:1620739f04e36a2c779f1a131a2dfd49b2fd07351bf1968ced074365933abc7a"},
+    {file = "sphinxcontrib_jquery-4.1-py2.py3-none-any.whl", hash = "sha256:f936030d7d0147dd026a4f2b5a57343d233f1fc7b363f68b3d4f1cb0993878ae"},
+]
+
+[package.dependencies]
+Sphinx = ">=1.8"
 
 [[package]]
 name = "sphinxcontrib-jsmath"
@@ -6400,4 +6433,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "584f64aa17ea3fe7b61b4b010dc26fdea7d6761df32e68ca859cfe9f9aad9e56"
+content-hash = "71ac0b0b0a5c76578c4e3fa73e8910eee40318fc8c9f3d8a5d6448b89181de78"
