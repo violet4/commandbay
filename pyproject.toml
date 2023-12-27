@@ -30,6 +30,8 @@ pytest-factoryboy = "^2.6.0"
 selenium = "^4.15.2"
 ipdb = "^0.13.13"
 ipython = "^8.18.1"
+prometheus-client = "^0.19.0"
+aioprometheus = {extras = ["starlette"], version = "^23.3.0"}
 
 
 [tool.poetry.group.docs.dependencies]

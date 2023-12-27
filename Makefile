@@ -41,10 +41,8 @@ backend_deps:
 	poetry install --only=main
 frontend_deps:
 	cd frontend && npm install
-dev: docs backend_deps frontend_deps
+dev: backend_deps frontend_deps docs
 	poetry run python start_server.py --dev
-run: backend_deps frontend_deps
-	poetry run python start_server.py
 
 
 coverage_report:
@@ -65,6 +63,9 @@ version:
 
 .PHONY: build
 build: docs_clean docs frontend frontend_docs version
+
+run: backend_deps frontend_deps build
+	poetry run python start_server.py
 
 #TODO:windows
 #TODO:macos?

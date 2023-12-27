@@ -123,6 +123,7 @@ def main():
     ensure_database_updated()
     npm_proc = start_npm_dev() if (pargs.dev and not pargs.suppress_frontend) else None
     sys.argv.append('commandbay.server:app')
+    sys.argv.append('--workers=16')
     print(f"Running {mode} server: '{sys.argv}'", file=sys.stderr)
     print(__doc__, file=sys.stderr)
     try:
