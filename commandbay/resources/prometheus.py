@@ -2,22 +2,40 @@
 import time
 from typing import List
 
-from fastapi.responses import PlainTextResponse
-from prometheus_client import generate_latest
+from starlette.datastructures import State
+from starlette.middleware.base import BaseHTTPMiddleware
 from aioprometheus.renderer import render
 from aioprometheus.collectors import Summary, Counter, REGISTRY
 from prometheus_client.utils import INF
-from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.responses import PlainTextResponse
 from fastapi import APIRouter, FastAPI, Header, Request, Response
 
-REQUESTS = Counter('requests_total', 'Total HTTP requests')
+
+REQUESTS = Counter(
+    'requests_total',
+    'Total HTTP requests',
+)
 RESPONSE_LATENCY = Summary(
-    'response_latency', 'Number of seconds to respond to a request',
+    'response_latency',
+    'Number of seconds to respond to a request',
 )
 
 
+class CBState(State):
+    requests_counter: Counter
+    response_latency_summary: Summary
+
+
+class CBFastAPI(FastAPI):
+    state: CBState
+
+
+class CBRequest(Request):
+    app: CBFastAPI
+
+
 class PrometheusMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
+    async def dispatch(self, request:CBRequest, call_next):
         labels = {'path': '/'+str(request.url).split('/', maxsplit=3)[-1].split('?', maxsplit=1)[0]}
 
         requests_counter: Counter = request.app.state.requests_counter
@@ -41,7 +59,7 @@ async def metrics(request: Request, accept: List[str]=Header(None)) -> Response:
     return Response(content=content, media_type=http_headers['Content-Type'])
 
 
-def initialize(app:FastAPI, api_router:APIRouter):
+def initialize(app:CBFastAPI, api_router:APIRouter):
     app.add_middleware(PrometheusMiddleware)
     api_router.include_router(prefix="/metrics", router=prometheus_router)
 

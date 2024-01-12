@@ -4,7 +4,11 @@ import '@/styles/globals.css'
 import NavbarLeft from '@/nav/NavbarLeft';
 import NavbarTop from '@/nav/NavbarTop';
 
-export default function MyApp({ Component, pageProps }: AppProps) {
+export default function MyApp({ Component, pageProps, router }: AppProps) {
+  console.log("router.pathname", router.pathname)
+  if (router.pathname.search('/overlays/') >= 0)
+    return <Component {...pageProps} />;
+
   const topNavbarHeight = 40;
   return (
     <div className="flex h-screen bg-gray-100">
