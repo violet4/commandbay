@@ -7,9 +7,10 @@ from functools import wraps
 import requests
 
 from aiohttp import ClientSession, ClientWebSocketResponse
-from fastapi import FastAPI, APIRouter, WebSocket, applications
+from fastapi import APIRouter, WebSocket, applications
 from fastapi.staticfiles import StaticFiles
 from fastapi.openapi import docs
+from commandbay.resources.prometheus import CBFastAPI
 
 from commandbay.resources.user import user_router
 from commandbay.resources.arduino_power import arduino_router
@@ -21,6 +22,7 @@ from commandbay.resources.spotify import spotify_router
 from commandbay.resources.do_tts import initialize_tts, tts_router
 from commandbay.resources.utils import host_live_frontend_and_docs, host_static_frontend
 from commandbay.resources.settings import settings_router
+from commandbay.resources.pantheon import pantheon_router
 from commandbay.resources.test import test_router
 from commandbay.utils.environ import environment as env
 import commandbay
@@ -43,6 +45,7 @@ api_router.include_router(prefix="/log", router=log_router)
 api_router.include_router(prefix="/rewards", router=rewards_router)
 api_router.include_router(prefix="/settings", router=settings_router)
 api_router.include_router(prefix="/test", router=test_router)
+api_router.include_router(prefix="/pantheon", router=pantheon_router)
 
 
 @api_router.get('/version')
@@ -50,12 +53,24 @@ def get_version():
     return {'version': commandbay.full_version}
 
 
-app = FastAPI(
+app = CBFastAPI(
     openapi_url="/api/v0/openapi.json",
     docs_url='/api/v0/docs',
     version=commandbay.__version__,
     title="CommandBay",
+    # debug=True,
 )
+
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    print(exc.errors())
+    return JSONResponse(
+        status_code=422,
+        content={"detail": str(exc.errors())},
+    )
 
 try:
     from commandbay.resources.prometheus import initialize as initialize_prometheus

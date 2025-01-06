@@ -31,11 +31,13 @@ class TTS:
         self.tts_disabled = False
         self.tts_enabled = True
 
-        self.setProperty('volume', 0.1)
-        # self.setProperty('rate', 120)
+        self.setProperty('volume', 0.2)
+        # it seems 100 is 1x speed, 200 is 2x speed, etc.
+        self.setProperty('rate', 135)
         # if this voice isn't installed then this command is simply ignored.
         # mbrola
         # self.setProperty('voice', 'mb-us1')
+        self.setProperty('voice', 'mb-us3')
 
     def setProperty(self, propName: str, value: Any):
         if self.tts_disabled:
