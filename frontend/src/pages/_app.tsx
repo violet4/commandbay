@@ -6,6 +6,7 @@ import NavbarTop from '@/nav/NavbarTop';
 
 export default function MyApp({ Component, pageProps, router }: AppProps) {
   console.log("router.pathname", router.pathname)
+  // don't add sidebars for plain overlays
   if (router.pathname.search('/overlays/') >= 0)
     return <Component {...pageProps} />;
 
